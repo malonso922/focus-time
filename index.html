@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Focus Timer • Countdown + Progress</title>
+  <style>
+    :root{
+      --bg:#0b132b;/* deep navy */
+      --panel:#111a33;
+      --accent:#4da3ff;
+      --accent-2:#49d47a;
+      --text:#eef3ff;
+      --muted:#a7b2cc;
+      --warn:#ff7a7a;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:linear-gradient(160deg,var(--bg),#0f1b3d 60%);
+      color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
+      display:grid; place-items:center; padding:16px;
+    }
+    .card{
+      width:min(640px,100%); background:rgba(17,26,51,.85); backdrop-filter: blur(6px);
+      border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:0 10px 30px rgba(0,0,0,.4);
+      padding:16px 16px 18px;
+    }
+    .top{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+    .top input[type="text"]{flex:1 1 260px; min-width:180px}
+    label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px}
+    input,select,button{border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f1a33; color:var(--text); padding:10px 12px; outline:none}
+    input:focus,select:focus{border-color:var(--accent)}
+    .timer{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px
+    }
+    .timebox{display:flex; gap:8px; align-items:center}
+    .time{font-size:28px; font-weight:700; letter-spacing:.5px}
+    .pill{padding:6px 10px; border-radius:999px; background:rgba(77,163,255,.12); border:1px solid rgba(77,163,255,.25); font-weight:600}
+    .controls{display:flex; gap:8px; align-items:center; margin-left:auto; flex-wrap:wrap}
+    .btn{cursor:pointer; font-weight:700}
+    .btn.primary{background:linear-gradient(180deg,var(--accent),#2e7ddd); color:#001a33; border:none}
+    .btn.secondary{background:#15224a}
+    .btn.danger{background:#3a1420; border-color:#6e1f33; color:#ffd6d6}
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    @media (max-width:560px){.grid{grid-template-columns:1fr}}
+
+    .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden; position:relative}
+    .fill{height:100%; width:0%; background:var(--accent); transition:width .3s ease, background .3s ease}
+    .tick{position:absolute; top:0; bottom:0; width:2px; background:rgba(255,255,255,.12)}
+
+    .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
+
+    .footer{display:flex; gap:10px; align-items:center; margin-top:12px; color:var(--muted)}
+    .link{color:#b9d4ff; text-decoration:none}
+    .link:hover{text-decoration:underline}
+
+    .compact body, .compact .card{padding:10px}
+  </style>
+</head>
+<body>
+  <div class="card" id="app">
+    <div class="grid">
+      <div>
+        <label>Task name</label>
+        <input id="label" type="text" placeholder="e.g., Series 65 Study Sprint" />
+      </div>
+      <div>
+        <label>Duration</label>
+        <div style="display:flex; gap:8px">
+          <input id="mins" type="number" min="1" step="1" value="25" style="width:110px"/>
+          <select id="unit">
+            <option value="min" selected>minutes</option>
+            <option value="hr">hours</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="timer">
+      <div class="timebox">
+        <span class="pill" id="status">Ready</span>
+        <span class="time" id="clock">25:00</span>
+      </div>
+      <div class="controls">
+        <button class="btn primary" id="startBtn">Start</button>
+        <button class="btn secondary" id="pauseBtn" disabled>Pause</button>
+        <button class="btn danger" id="resetBtn" disabled>Reset</button>
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px">
+          <input id="sound" type="checkbox" checked /> Beep on finish
+        </label>
+      </div>
+    </div>
+
+    <div style="margin-top:12px">
+      <div class="bar" id="bar">
+        <div class="fill" id="fill"></div>
+      </div>
+      <div class="meta">
+        <div><span id="pct">0%</span> complete</div>
+        <div>Elapsed: <span id="elapsed">0:00</span> • Remaining: <span id="remain">25:00</span></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <label style="display:flex; align-items:center; gap:6px; font-size:12px">
+        <input id="autostart" type="checkbox" /> Auto-start when page loads
+      </label>
+      <span style="margin-left:auto"></span>
+      <a class="link" href="#" id="shareLink">Share preset</a>
+    </div>
+  </div>
+
+  <audio id="ding" preload="auto">
+    <source src="data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCAAAACAAACbG1hAAAAAAAz//8AAP//AACQAAACcQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" type="audio/mpeg">
+  </audio>
+
+<script>
+(function(){
+  const $ = id=>document.getElementById(id);
+  const label=$('label'), mins=$('mins'), unit=$('unit');
+  const clock=$('clock'), status=$('status');
+  const startBtn=$('startBtn'), pauseBtn=$('pauseBtn'), resetBtn=$('resetBtn');
+  const bar=$('bar'), fill=$('fill'), pct=$('pct'), elapsed=$('elapsed'), remain=$('remain');
+  const sound=$('sound'), ding=$('ding'), autostart=$('autostart');
+  const shareLink=$('shareLink');
+
+  let totalMs=0, startAt=0, elapsedMs=0, timer=null, running=false;
+
+  /* Utilities */
+  const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+  function fmt(ms){
+    ms=Math.max(0,Math.floor(ms/1000));
+    const h=Math.floor(ms/3600), m=Math.floor((ms%3600)/60), s=ms%60;
+    return h? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
+  }
+
+  function computeTotal(){
+    const v=parseFloat(mins.value||0);
+    totalMs = (unit.value==='hr'? v*60 : v) * 60*1000;
+    totalMs = Math.max(1000,totalMs);
+  }
+
+  function updateShare(){
+    const params=new URLSearchParams({label:label.value, mins:mins.value, unit:unit.value, autostart:autostart.checked?1:0});
+    shareLink.href = `${location.origin}${location.pathname}?${params.toString()}`;
+  }
+
+  function draw(){
+    const done=clamp(elapsedMs,0,totalMs);
+    const p = Math.round( (done/totalMs)*100 );
+    fill.style.width = p + '%';
+    // color blend: blue → green → gray
+    fill.style.background = p>=100? '#646b7a' : (p<67? 'var(--accent)' : 'var(--accent-2)');
+    pct.textContent = p + '%';
+    clock.textContent = fmt(totalMs - done);
+    elapsed.textContent = fmt(done);
+    remain.textContent = fmt(totalMs - done);
+  }
+
+  function setState(newRunning){
+    running=newRunning;
+    startBtn.disabled=running; pauseBtn.disabled=!running; resetBtn.disabled=!running && elapsedMs===0;
+    status.textContent = running ? 'In progress' : (elapsedMs && elapsedMs<totalMs ? 'Paused' : 'Ready');
+  }
+
+  function start(){
+    computeTotal();
+    if(elapsedMs>=totalMs){ elapsedMs=0; }
+    if(!running){ startAt=Date.now()-elapsedMs; timer=requestAnimationFrame(tick); setState(true); }
+  }
+
+  function pause(){
+    if(running){ cancelAnimationFrame(timer); elapsedMs=Date.now()-startAt; setState(false); draw(); }
+  }
+
+  function reset(){
+    cancelAnimationFrame(timer); elapsedMs=0; setState(false); draw();
+  }
+
+  function tick(){
+    elapsedMs = Date.now()-startAt;
+    if(elapsedMs>=totalMs){ elapsedMs=totalMs; draw(); setState(false); if(sound.checked){ ding.currentTime=0; ding.play().catch(()=>{}); } return; }
+    draw(); timer=requestAnimationFrame(tick);
+  }
+
+  /* Events */
+  [label, mins, unit, autostart].forEach(el=>{
+    el.addEventListener('input',()=>{ updateShare(); localSave(); draw(); });
+    el.addEventListener('change',()=>{ updateShare(); localSave(); draw(); });
+  });
+  startBtn.addEventListener('click', ()=>{ start(); localSave(); });
+  pauseBtn.addEventListener('click', ()=>{ pause(); localSave(); });
+  resetBtn.addEventListener('click', ()=>{ reset(); localSave(); });
+  sound.addEventListener('change', localSave);
+
+  /* URL params + local storage */
+  function localSave(){
+    const data={label:label.value, mins:mins.value, unit:unit.value, autostart:autostart.checked, sound:sound.checked};
+    try{ localStorage.setItem('focus-timer-v1', JSON.stringify(data)); }catch(e){}
+  }
+  function localLoad(){
+    try{
+      const q=new URLSearchParams(location.search);
+      const fromUrl = {
+        label:q.get('label'),
+        mins:q.get('mins'),
+        unit:q.get('unit'),
+        autostart:q.get('autostart')==='1'
+      };
+      const saved=JSON.parse(localStorage.getItem('focus-timer-v1')||'{}');
+      const data={...saved, ...Object.fromEntries(Object.entries(fromUrl).filter(([,v])=>v!==null))};
+      if(data.label!=null) label.value=data.label;
+      if(data.mins!=null) mins.value=data.mins;
+      if(data.unit!=null) unit.value=data.unit;
+      if(data.autostart!=null) autostart.checked=data.autostart;
+      if(saved.sound!=null) sound.checked=saved.sound;
+    }catch(e){}
+  }
+
+  /* Initialize */
+  localLoad(); computeTotal(); draw(); updateShare();
+  if(autostart.checked && !(new URLSearchParams(location.search)).has('autostart')){ start(); }
+})();
+</script>
+</body>
+</html>
