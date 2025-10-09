@@ -48,15 +48,22 @@
     .chip{border:1px solid rgba(255,255,255,.15); background:#0f0f0f; padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:600}
     .chip:hover{border-color:var(--accent)}
 
-    /* progress + clock on right */
+    /* progress + centered clock on right */
     .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden}
     .fill{height:100%; width:0%; background:var(--accent); transition:width .3s ease, background .3s ease}
-    .barRow{display:flex; align-items:center; gap:10px}
-    .barRow .bar{flex:1; min-width:0}
+    .barRow{
+      display:grid;
+      grid-template-columns: 1fr max-content; /* long bar + clock fits its width */
+      gap:10px;
+      align-items:center;
+    }
+    .barRow .bar{width:100%; min-width:0}  /* keep the long bar */
     .clockRight{
-      font-size:28px; font-weight:700; letter-spacing:.5px; text-align:right;
-      width: 9.5ch;           /* fixed box => consistent right padding */
-      font-variant-numeric: tabular-nums;  /* even digit widths */
+      width:9.5ch;                    /* fits mm:ss and h:mm:ss */
+      text-align:center;              /* equal padding left/right */
+      font-size:28px; font-weight:700; letter-spacing:.5px;
+      font-variant-numeric: tabular-nums; /* monospaced digits */
+      padding-inline:2px;
     }
 
     .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
@@ -66,7 +73,7 @@
     .link:hover{text-decoration:underline}
     .actions{margin-left:auto; display:flex; gap:8px; align-items:center}
 
-    /* icon buttons (inverted: light icons on dark bg) */
+    /* icon buttons (circle, inverted) */
     .iconbtn{
       width:36px; height:36px; display:grid; place-items:center; border-radius:999px;
       border:none; background:transparent; cursor:pointer;
@@ -75,7 +82,7 @@
     .iconbtn:hover{ color:var(--accent); }
     .iconbtn svg{ width:22px; height:22px; display:block }
     .iconbtn .ring{ fill:none; stroke:currentColor; stroke-width:2 }
-    .iconbtn .shape{ fill:currentColor }  /* inner symbol uses same color */
+    .iconbtn .shape{ fill:currentColor }
 
     .hidden{display:none!important}
     .banner{margin:-4px 0 8px; font-size:16px; font-weight:800; text-align:center; color:#e6eeff}
@@ -126,7 +133,7 @@
     <div class="footer">
       <a class="link" href="#" id="shareLink">Share preset</a>
       <div class="actions">
-        <!-- START (play in ring) -->
+        <!-- START -->
         <button class="iconbtn" id="startBtn" title="Start" aria-label="Start">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle class="ring" cx="12" cy="12" r="10" />
@@ -141,7 +148,7 @@
             <rect class="shape" x="12.8" y="7" width="2.8" height="10" rx="0.8"/>
           </svg>
         </button>
-        <!-- RESET (stop) -->
+        <!-- RESET -->
         <button class="iconbtn" id="resetBtn" title="Reset" aria-label="Reset" disabled>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle class="ring" cx="12" cy="12" r="10" />
