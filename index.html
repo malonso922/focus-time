@@ -3,23 +3,26 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <title>Focus Timer • Countdown + Progress</title>
   <style>
     :root{
       --bg:#111111;         /* ClickUp dark */
-      --panel:#161616;      /* card bg */
-      --accent:#4da3ff;
-      --accent-2:#49d47a;
+      --panel:#161616;      /* card background */
+      --accent:#4da3ff;     /* progress color */
+      --accent-2:#49d47a;   /* late-stage color */
+      --focus:#a970ff;      /* ClickUp-esque focus ring */
       --text:#eef3ff;
       --muted:#a7b2cc;
       --radius:16px;
     }
-    /* minimal reset */
     *,*::before,*::after{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0; background:var(--bg);
-      color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
+      color:var(--text); font:14px/1.4 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
       display:grid; place-items:center; padding:16px;
     }
     .card{
@@ -28,8 +31,14 @@
       padding:16px 16px 18px;
     }
     label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px}
-    input,select,button{border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:var(--text); padding:10px 12px; outline:none}
-    input:focus,select:focus{border-color:var(--accent)}
+    input,select,button{
+      border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:var(--text); padding:10px 12px; outline:none;
+      transition:border-color .15s ease, box-shadow .15s ease;
+    }
+    input:focus,select:focus{
+      border-color:var(--focus);
+      box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent);
+    }
     .grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:start}
     @media (max-width:640px){.grid{grid-template-columns:minmax(0,1fr)}}
 
@@ -129,7 +138,7 @@
   const clock=$('clock');
   const startBtn=$('startBtn'), pauseBtn=$('pauseBtn'), resetBtn=$('resetBtn');
   const bar=$('bar'), fill=$('fill'), pct=$('pct'), elapsed=$('elapsed'), remain=$('remain');
-  const sound=$('sound') || {checked:true}, ding=$('ding'); // sound checkbox may be removed later
+  const ding=$('ding');
   const presets=$('presets');
   const shareLink=$('shareLink');
   const banner=$('banner');
@@ -176,7 +185,7 @@
     computeTotal();
     if(elapsedMs>=totalMs){ elapsedMs=0; }
     if(!running){ startAt=Date.now()-elapsedMs; timer=requestAnimationFrame(tick); setState(true); }
-    // show banner; hide inputs + preset chips; hide Start icon (keep disabled too)
+    // show banner; hide inputs + preset chips; hide Start icon
     banner.textContent = label.value || 'Untitled Task';
     banner.classList.remove('hidden');
     taskField.classList.add('hidden');
@@ -201,7 +210,7 @@
     elapsedMs = Date.now()-startAt;
     if(elapsedMs>=totalMs){
       elapsedMs=totalMs; draw(); setState(false);
-      if(sound.checked){ try{ ding.currentTime=0; ding.play().catch(()=>{});}catch(e){} }
+      try{ ding.currentTime=0; ding.play().catch(()=>{});}catch(e){}
       try{ if('Notification' in window && Notification.permission==='granted'){ new Notification('Timer done', { body: label.value || 'Focus timer complete' }); } }catch(e){}
       return;
     }
