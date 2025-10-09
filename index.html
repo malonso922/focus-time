@@ -6,13 +6,12 @@
   <title>Focus Timer • Countdown + Progress</title>
   <style>
     :root{
-      --bg:#0b132b;/* deep navy */
+      --bg:#0b132b;
       --panel:#111a33;
       --accent:#4da3ff;
       --accent-2:#49d47a;
       --text:#eef3ff;
       --muted:#a7b2cc;
-      --warn:#ff7a7a;
       --radius:16px;
     }
     *{box-sizing:border-box}
@@ -27,14 +26,13 @@
       border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:0 10px 30px rgba(0,0,0,.4);
       padding:16px 16px 18px;
     }
-    .top{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
-    .top input[type="text"]{flex:1 1 260px; min-width:180px}
     label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px}
     input,select,button{border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f1a33; color:var(--text); padding:10px 12px; outline:none}
     input:focus,select:focus{border-color:var(--accent)}
-    .timer{
-      display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px
-    }
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    @media (max-width:560px){.grid{grid-template-columns:1fr}}
+
+    .timer{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px}
     .timebox{display:flex; gap:8px; align-items:center}
     .time{font-size:28px; font-weight:700; letter-spacing:.5px}
     .pill{padding:6px 10px; border-radius:999px; background:rgba(77,163,255,.12); border:1px solid rgba(77,163,255,.25); font-weight:600}
@@ -43,30 +41,36 @@
     .btn.primary{background:linear-gradient(180deg,var(--accent),#2e7ddd); color:#001a33; border:none}
     .btn.secondary{background:#15224a}
     .btn.danger{background:#3a1420; border-color:#6e1f33; color:#ffd6d6}
-    .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-    @media (max-width:560px){.grid{grid-template-columns:1fr}}
 
     .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden; position:relative}
     .fill{height:100%; width:0%; background:var(--accent); transition:width .3s ease, background .3s ease}
-    .tick{position:absolute; top:0; bottom:0; width:2px; background:rgba(255,255,255,.12)}
+    .bar-label{position:absolute; inset:0; display:grid; place-items:center; font-weight:700; font-size:12px; color:#dbe7ff; text-shadow:0 1px 2px rgba(0,0,0,.4); pointer-events:none}
 
     .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
-
     .footer{display:flex; gap:10px; align-items:center; margin-top:12px; color:var(--muted)}
     .link{color:#b9d4ff; text-decoration:none}
     .link:hover{text-decoration:underline}
 
+    /* Extras */
+    .presets{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+    .chip{border:1px solid rgba(255,255,255,.15); background:#0f1a33; padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:600}
+    .chip:hover{border-color:var(--accent)}
+    .kbd{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-weight:700; font-size:11px; padding:2px 6px; border-radius:6px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06)}
     .compact body, .compact .card{padding:10px}
+    .hidden{display:none!important}
+    .banner{margin:-4px 0 8px; font-size:16px; font-weight:800; text-align:center; color:#e6eeff}
   </style>
 </head>
 <body>
   <div class="card" id="app">
+    <div class="banner hidden" id="banner"></div>
+
     <div class="grid">
-      <div>
+      <div id="taskField">
         <label>Task name</label>
         <input id="label" type="text" placeholder="e.g., Series 65 Study Sprint" />
       </div>
-      <div>
+      <div id="durationField">
         <label>Duration</label>
         <div style="display:flex; gap:8px">
           <input id="mins" type="number" min="1" step="1" value="25" style="width:110px"/>
@@ -76,6 +80,13 @@
           </select>
         </div>
       </div>
+    </div>
+
+    <div class="presets" id="presets">
+      <span class="chip" data-mins="15">15m</span>
+      <span class="chip" data-mins="25">25m</span>
+      <span class="chip" data-mins="45">45m</span>
+      <span class="chip" data-mins="60">60m</span>
     </div>
 
     <div class="timer">
@@ -96,6 +107,7 @@
     <div style="margin-top:12px">
       <div class="bar" id="bar">
         <div class="fill" id="fill"></div>
+        <div class="bar-label" id="barLabel">0%</div>
       </div>
       <div class="meta">
         <div><span id="pct">0%</span> complete</div>
@@ -105,10 +117,13 @@
 
     <div class="footer">
       <label style="display:flex; align-items:center; gap:6px; font-size:12px">
-        <input id="autostart" type="checkbox" /> Auto-start when page loads
+        <input id="autorestart" type="checkbox" /> Auto-restart
       </label>
-      <span style="margin-left:auto"></span>
-      <a class="link" href="#" id="shareLink">Share preset</a>
+      <label style="display:flex; align-items:center; gap:6px; font-size:12px">
+        <input id="compactToggle" type="checkbox" /> Compact
+      </label>
+      <span style="margin-left:auto" class="help">Hotkeys: <span class="kbd">Space</span> start/pause • <span class="kbd">R</span> reset</span>
+      <a class="link" href="#" id="shareLink" style="margin-left:10px">Share preset</a>
     </div>
   </div>
 
@@ -122,13 +137,18 @@
   const label=$('label'), mins=$('mins'), unit=$('unit');
   const clock=$('clock'), status=$('status');
   const startBtn=$('startBtn'), pauseBtn=$('pauseBtn'), resetBtn=$('resetBtn');
-  const bar=$('bar'), fill=$('fill'), pct=$('pct'), elapsed=$('elapsed'), remain=$('remain');
-  const sound=$('sound'), ding=$('ding'), autostart=$('autostart');
+  const bar=$('bar'), fill=$('fill'), pct=$('pct'), elapsed=$('elapsed'), remain=$('remain'), barLabel=$('barLabel');
+  const sound=$('sound'), ding=$('ding');
+  const autorestart=$('autorestart');
+  const compactToggle=$('compactToggle');
+  const presets=$('presets');
   const shareLink=$('shareLink');
+  const banner=$('banner');
+  const taskField=$('taskField');
+  const durationField=$('durationField');
 
   let totalMs=0, startAt=0, elapsedMs=0, timer=null, running=false;
 
-  /* Utilities */
   const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
   function fmt(ms){
     ms=Math.max(0,Math.floor(ms/1000));
@@ -143,17 +163,17 @@
   }
 
   function updateShare(){
-    const params=new URLSearchParams({label:label.value, mins:mins.value, unit:unit.value, autostart:autostart.checked?1:0});
+    const params=new URLSearchParams({label:label.value, mins:mins.value, unit:unit.value});
     shareLink.href = `${location.origin}${location.pathname}?${params.toString()}`;
   }
 
   function draw(){
-    const done=clamp(elapsedMs,0,totalMs);
+    const done=Math.max(0, Math.min(elapsedMs, totalMs));
     const p = Math.round( (done/totalMs)*100 );
     fill.style.width = p + '%';
-    // color blend: blue → green → gray
     fill.style.background = p>=100? '#646b7a' : (p<67? 'var(--accent)' : 'var(--accent-2)');
     pct.textContent = p + '%';
+    barLabel.textContent = p + '%';
     clock.textContent = fmt(totalMs - done);
     elapsed.textContent = fmt(done);
     remain.textContent = fmt(totalMs - done);
@@ -169,6 +189,12 @@
     computeTotal();
     if(elapsedMs>=totalMs){ elapsedMs=0; }
     if(!running){ startAt=Date.now()-elapsedMs; timer=requestAnimationFrame(tick); setState(true); }
+    // Show banner + hide inputs and Start
+    banner.textContent = label.value || 'Untitled Task';
+    banner.classList.remove('hidden');
+    taskField.classList.add('hidden');
+    durationField.classList.add('hidden');
+    startBtn.classList.add('hidden');
   }
 
   function pause(){
@@ -177,16 +203,27 @@
 
   function reset(){
     cancelAnimationFrame(timer); elapsedMs=0; setState(false); draw();
+    // Restore inputs & Start; hide banner
+    banner.classList.add('hidden');
+    taskField.classList.remove('hidden');
+    durationField.classList.remove('hidden');
+    startBtn.classList.remove('hidden');
   }
 
   function tick(){
     elapsedMs = Date.now()-startAt;
-    if(elapsedMs>=totalMs){ elapsedMs=totalMs; draw(); setState(false); if(sound.checked){ ding.currentTime=0; ding.play().catch(()=>{}); } return; }
+    if(elapsedMs>=totalMs){
+      elapsedMs=totalMs; draw(); setState(false);
+      if(sound.checked){ try{ ding.currentTime=0; ding.play().catch(()=>{});}catch(e){} }
+      try{ if('Notification' in window && Notification.permission==='granted'){ new Notification('Timer done', { body: label.value || 'Focus timer complete' }); } }catch(e){}
+      if(autorestart.checked){ setTimeout(()=>{ elapsedMs=0; start(); }, 800); }
+      return;
+    }
     draw(); timer=requestAnimationFrame(tick);
   }
 
-  /* Events */
-  [label, mins, unit, autostart].forEach(el=>{
+  // Events
+  [label, mins, unit].forEach(el=>{
     el.addEventListener('input',()=>{ updateShare(); localSave(); draw(); });
     el.addEventListener('change',()=>{ updateShare(); localSave(); draw(); });
   });
@@ -195,34 +232,44 @@
   resetBtn.addEventListener('click', ()=>{ reset(); localSave(); });
   sound.addEventListener('change', localSave);
 
-  /* URL params + local storage */
+  compactToggle.addEventListener('change', ()=>{ document.body.classList.toggle('compact', compactToggle.checked); localSave(); });
+  presets.addEventListener('click', (e)=>{
+    const chip=e.target.closest('.chip');
+    if(!chip) return;
+    mins.value = chip.dataset.mins;
+    unit.value = 'min';
+    elapsedMs=0; draw(); updateShare(); localSave();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.code==='Space'){ e.preventDefault(); running? pause(): start(); }
+    if(e.key==='r' || e.key==='R'){ reset(); }
+  });
+  try{ if('Notification' in window && Notification.permission==='default'){ Notification.requestPermission().catch(()=>{}); } }catch(e){}
+
   function localSave(){
-    const data={label:label.value, mins:mins.value, unit:unit.value, autostart:autostart.checked, sound:sound.checked};
+    const data={label:label.value, mins:mins.value, unit:unit.value, autorestart:autorestart.checked, compact:compactToggle.checked, sound:sound.checked};
     try{ localStorage.setItem('focus-timer-v1', JSON.stringify(data)); }catch(e){}
   }
   function localLoad(){
     try{
       const q=new URLSearchParams(location.search);
-      const fromUrl = {
-        label:q.get('label'),
-        mins:q.get('mins'),
-        unit:q.get('unit'),
-        autostart:q.get('autostart')==='1'
-      };
+      const fromUrl = { label:q.get('label'), mins:q.get('mins'), unit:q.get('unit') };
       const saved=JSON.parse(localStorage.getItem('focus-timer-v1')||'{}');
       const data={...saved, ...Object.fromEntries(Object.entries(fromUrl).filter(([,v])=>v!==null))};
       if(data.label!=null) label.value=data.label;
       if(data.mins!=null) mins.value=data.mins;
       if(data.unit!=null) unit.value=data.unit;
-      if(data.autostart!=null) autostart.checked=data.autostart;
+      if(data.autorestart!=null) autorestart.checked=data.autorestart;
+      if(data.compact!=null) compactToggle.checked=data.compact;
       if(saved.sound!=null) sound.checked=saved.sound;
+      document.body.classList.toggle('compact', !!data.compact);
     }catch(e){}
   }
 
-  /* Initialize */
+  // Initialize
   localLoad(); computeTotal(); draw(); updateShare();
-  if(autostart.checked && !(new URLSearchParams(location.search)).has('autostart')){ start(); }
 })();
 </script>
 </body>
 </html>
+
