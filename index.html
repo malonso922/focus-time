@@ -6,8 +6,8 @@
   <title>Focus Timer • Countdown + Progress</title>
   <style>
     :root{
-      --bg:#111111;
-      --panel:#111a33;
+      --bg:#111111;         /* ClickUp dark */
+      --panel:#161616;      /* card bg */
       --accent:#4da3ff;
       --accent-2:#49d47a;
       --text:#eef3ff;
@@ -17,17 +17,17 @@
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; background:var(--bg);
+      margin:0; background:var(--bg) !important;
       color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
       display:grid; place-items:center; padding:16px;
     }
     .card{
-      width:min(640px,100%); background:#161616; backdrop-filter: blur(6px);
+      width:min(640px,100%); background:var(--panel);
       border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:0 10px 30px rgba(0,0,0,.4);
       padding:16px 16px 18px;
     }
     label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px}
-    input,select,button{border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f1a33; color:var(--text); padding:10px 12px; outline:none}
+    input,select,button{border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:var(--text); padding:10px 12px; outline:none}
     input:focus,select:focus{border-color:var(--accent)}
     .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
     @media (max-width:560px){.grid{grid-template-columns:1fr}}
@@ -39,24 +39,22 @@
     .controls{display:flex; gap:8px; align-items:center; margin-left:auto; flex-wrap:wrap}
     .btn{cursor:pointer; font-weight:700}
     .btn.primary{background:linear-gradient(180deg,var(--accent),#2e7ddd); color:#001a33; border:none}
-    .btn.secondary{background:#15224a}
+    .btn.secondary{background:#1f1f1f}
     .btn.danger{background:#3a1420; border-color:#6e1f33; color:#ffd6d6}
 
     .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden; position:relative}
     .fill{height:100%; width:0%; background:var(--accent); transition:width .3s ease, background .3s ease}
-    .bar-label{position:absolute; inset:0; display:grid; place-items:center; font-weight:700; font-size:12px; color:#dbe7ff; text-shadow:0 1px 2px rgba(0,0,0,.4); pointer-events:none}
 
     .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
     .footer{display:flex; gap:10px; align-items:center; margin-top:12px; color:var(--muted)}
     .link{color:#b9d4ff; text-decoration:none}
     .link:hover{text-decoration:underline}
 
-    /* Extras */
+    /* chips under Duration */
     .presets{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
-    .chip{border:1px solid rgba(255,255,255,.15); background:#0f1a33; padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:600}
+    .chip{border:1px solid rgba(255,255,255,.15); background:#0f0f0f; padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:600}
     .chip:hover{border-color:var(--accent)}
-    .kbd{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-weight:700; font-size:11px; padding:2px 6px; border-radius:6px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06)}
-    .compact body, .compact .card{padding:10px}
+
     .hidden{display:none!important}
     .banner{margin:-4px 0 8px; font-size:16px; font-weight:800; text-align:center; color:#e6eeff}
   </style>
@@ -70,26 +68,23 @@
         <label>Task name</label>
         <input id="label" type="text" placeholder="e.g., Series 65 Study Sprint" />
       </div>
-      <div id=\"durationField\">
-        <label>Duration<\/label>
-        <div style=\"display:flex; gap:8px\">
-          <input id=\"mins\" type=\"number\" min=\"1\" step=\"1\" value=\"25\" style=\"width:110px\"\/>
-          <select id=\"unit\">
-            <option value=\"min\" selected>minutes<\/option>
-            <option value=\"hr\">hours<\/option>
-          <\/select>
-        <\/div>
-        <div class=\"presets\" id=\"presets\">
-          <span class=\"chip\" data-mins=\"15\">15m<\/span>
-          <span class=\"chip\" data-mins=\"25\">25m<\/span>
-          <span class=\"chip\" data-mins=\"45\">45m<\/span>
-          <span class=\"chip\" data-mins=\"60\">60m<\/span>
-        <\/div>
-      <\/div>
+      <div id="durationField">
+        <label>Duration</label>
+        <div style="display:flex; gap:8px">
+          <input id="mins" type="number" min="1" step="1" value="25" style="width:110px"/>
+          <select id="unit">
+            <option value="min" selected>minutes</option>
+            <option value="hr">hours</option>
+          </select>
+        </div>
+        <div class="presets" id="presets">
+          <span class="chip" data-mins="15">15m</span>
+          <span class="chip" data-mins="25">25m</span>
+          <span class="chip" data-mins="45">45m</span>
+          <span class="chip" data-mins="60">60m</span>
+        </div>
       </div>
     </div>
-
-    
 
     <div class="timer">
       <div class="timebox">
@@ -107,18 +102,18 @@
     </div>
 
     <div style="margin-top:12px">
-      <div class=\"bar\" id=\"bar\">
-        <div class=\"fill\" id=\"fill\"><\/div>
-      <\/div>
-      <div class=\"meta\">
+      <div class="bar" id="bar">
+        <div class="fill" id="fill"></div>
+      </div>
+      <div class="meta">
         <div><span id="pct">0%</span> complete</div>
         <div>Elapsed: <span id="elapsed">0:00</span> • Remaining: <span id="remain">25:00</span></div>
       </div>
     </div>
 
-    <div class=\"footer\">
-      <a class=\"link\" href=\"#\" id=\"shareLink\">Share preset<\/a>
-    <\/div>
+    <div class="footer">
+      <a class="link" href="#" id="shareLink">Share preset</a>
+    </div>
   </div>
 
   <audio id="ding" preload="auto">
@@ -133,7 +128,6 @@
   const startBtn=$('startBtn'), pauseBtn=$('pauseBtn'), resetBtn=$('resetBtn');
   const bar=$('bar'), fill=$('fill'), pct=$('pct'), elapsed=$('elapsed'), remain=$('remain');
   const sound=$('sound'), ding=$('ding');
-  
   const presets=$('presets');
   const shareLink=$('shareLink');
   const banner=$('banner');
@@ -161,7 +155,7 @@
   }
 
   function draw(){
-    const done=Math.max(0, Math.min(elapsedMs, totalMs));
+    const done=clamp(elapsedMs,0,totalMs);
     const p = Math.round( (done/totalMs)*100 );
     fill.style.width = p + '%';
     fill.style.background = p>=100? '#646b7a' : (p<67? 'var(--accent)' : 'var(--accent-2)');
@@ -181,7 +175,7 @@
     computeTotal();
     if(elapsedMs>=totalMs){ elapsedMs=0; }
     if(!running){ startAt=Date.now()-elapsedMs; timer=requestAnimationFrame(tick); setState(true); }
-    // Show banner + hide inputs and Start
+    // Show banner; hide inputs & Start + preset chips
     banner.textContent = label.value || 'Untitled Task';
     banner.classList.remove('hidden');
     taskField.classList.add('hidden');
@@ -195,7 +189,7 @@
 
   function reset(){
     cancelAnimationFrame(timer); elapsedMs=0; setState(false); draw();
-    // Restore inputs & Start; hide banner
+    // Restore UI
     banner.classList.add('hidden');
     taskField.classList.remove('hidden');
     durationField.classList.remove('hidden');
@@ -208,7 +202,6 @@
       elapsedMs=totalMs; draw(); setState(false);
       if(sound.checked){ try{ ding.currentTime=0; ding.play().catch(()=>{});}catch(e){} }
       try{ if('Notification' in window && Notification.permission==='granted'){ new Notification('Timer done', { body: label.value || 'Focus timer complete' }); } }catch(e){}
-      , 800); }
       return;
     }
     draw(); timer=requestAnimationFrame(tick);
@@ -224,7 +217,6 @@
   resetBtn.addEventListener('click', ()=>{ reset(); localSave(); });
   sound.addEventListener('change', localSave);
 
-   localSave(); });
   presets.addEventListener('click', (e)=>{
     const chip=e.target.closest('.chip');
     if(!chip) return;
@@ -232,6 +224,7 @@
     unit.value = 'min';
     elapsedMs=0; draw(); updateShare(); localSave();
   });
+
   document.addEventListener('keydown', (e)=>{
     if(e.code==='Space'){ e.preventDefault(); running? pause(): start(); }
     if(e.key==='r' || e.key==='R'){ reset(); }
@@ -240,8 +233,6 @@
 
   function localSave(){
     const data={label:label.value, mins:mins.value, unit:unit.value, sound:sound.checked};
-    try{ localStorage.setItem('focus-timer-v1', JSON.stringify(data)); }catch(e){}
-  };
     try{ localStorage.setItem('focus-timer-v1', JSON.stringify(data)); }catch(e){}
   }
   function localLoad(){
@@ -254,17 +245,6 @@
       if(data.mins!=null) mins.value=data.mins;
       if(data.unit!=null) unit.value=data.unit;
       if(saved.sound!=null) sound.checked=saved.sound;
-    }catch(e){}
-  };
-      const saved=JSON.parse(localStorage.getItem('focus-timer-v1')||'{}');
-      const data={...saved, ...Object.fromEntries(Object.entries(fromUrl).filter(([,v])=>v!==null))};
-      if(data.label!=null) label.value=data.label;
-      if(data.mins!=null) mins.value=data.mins;
-      if(data.unit!=null) unit.value=data.unit;
-      if(data.autorestart!=null) autorestart.checked=data.autorestart;
-      if(data.compact!=null) compactToggle.checked=data.compact;
-      if(saved.sound!=null) sound.checked=saved.sound;
-      document.body.classList.toggle('compact', !!data.compact);
     }catch(e){}
   }
 
