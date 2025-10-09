@@ -14,10 +14,11 @@
       --muted:#a7b2cc;
       --radius:16px;
     }
-    *{box-sizing:border-box}
+    /* minimal reset */
+    *,*::before,*::after{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; background:var(--bg) !important;
+      margin:0; background:var(--bg);
       color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
       display:grid; place-items:center; padding:16px;
     }
@@ -29,31 +30,28 @@
     label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px}
     input,select,button{border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:var(--text); padding:10px 12px; outline:none}
     input:focus,select:focus{border-color:var(--accent)}
-    .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-    @media (max-width:560px){.grid{grid-template-columns:1fr}}
-
-    .timer{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px}
-    .timebox{display:flex; gap:8px; align-items:center}
-    .time{font-size:28px; font-weight:700; letter-spacing:.5px}
-    .pill{padding:6px 10px; border-radius:999px; background:rgba(77,163,255,.12); border:1px solid rgba(77,163,255,.25); font-weight:600}
-    .controls{display:flex; gap:8px; align-items:center; margin-left:auto; flex-wrap:wrap}
-    .btn{cursor:pointer; font-weight:700}
-    .btn.primary{background:linear-gradient(180deg,var(--accent),#2e7ddd); color:#001a33; border:none}
-    .btn.secondary{background:#1f1f1f}
-    .btn.danger{background:#3a1420; border-color:#6e1f33; color:#ffd6d6}
-
-    .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden; position:relative}
-    .fill{height:100%; width:0%; background:var(--accent); transition:width .3s ease, background .3s ease}
-
-    .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
-    .footer{display:flex; gap:10px; align-items:center; margin-top:12px; color:var(--muted)}
-    .link{color:#b9d4ff; text-decoration:none}
-    .link:hover{text-decoration:underline}
+    .grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:start}
+    @media (max-width:640px){.grid{grid-template-columns:minmax(0,1fr)}}
 
     /* chips under Duration */
     .presets{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
     .chip{border:1px solid rgba(255,255,255,.15); background:#0f0f0f; padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:600}
     .chip:hover{border-color:var(--accent)}
+
+    /* progress + clock on right */
+    .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden}
+    .fill{height:100%; width:0%; background:var(--accent); transition:width .3s ease, background .3s ease}
+    .barRow{display:flex; align-items:center; gap:10px}
+    .clockRight{font-size:28px; font-weight:700; letter-spacing:.5px; text-align:right; min-width:96px}
+
+    .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
+
+    .footer{display:flex; gap:10px; align-items:center; margin-top:12px; color:var(--muted)}
+    .link{color:#b9d4ff; text-decoration:none}
+    .link:hover{text-decoration:underline}
+    .actions{margin-left:auto; display:flex; gap:8px; align-items:center}
+    .iconbtn{width:36px; height:36px; display:grid; place-items:center; border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#1f1f1f; cursor:pointer}
+    .iconbtn svg{width:18px; height:18px; fill:none; stroke:#e8f0ff; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
 
     .hidden{display:none!important}
     .banner{margin:-4px 0 8px; font-size:16px; font-weight:800; text-align:center; color:#e6eeff}
@@ -86,24 +84,13 @@
       </div>
     </div>
 
-    <div class="timer">
-      <div class="timebox">
-        <span class="pill" id="status">Ready</span>
-        <span class="time" id="clock">25:00</span>
-      </div>
-      <div class="controls">
-        <button class="btn primary" id="startBtn">Start</button>
-        <button class="btn secondary" id="pauseBtn" disabled>Pause</button>
-        <button class="btn danger" id="resetBtn" disabled>Reset</button>
-        <label style="display:flex; align-items:center; gap:6px; font-size:12px">
-          <input id="sound" type="checkbox" checked /> Beep on finish
-        </label>
-      </div>
-    </div>
-
+    <!-- progress + clock on right -->
     <div style="margin-top:12px">
-      <div class="bar" id="bar">
-        <div class="fill" id="fill"></div>
+      <div class="barRow">
+        <div class="bar" id="bar">
+          <div class="fill" id="fill"></div>
+        </div>
+        <div class="clockRight" id="clock">25:00</div>
       </div>
       <div class="meta">
         <div><span id="pct">0%</span> complete</div>
@@ -111,8 +98,23 @@
       </div>
     </div>
 
+    <!-- footer: share on left, action icons on right -->
     <div class="footer">
       <a class="link" href="#" id="shareLink">Share preset</a>
+      <div class="actions">
+        <button class="iconbtn" id="startBtn" title="Start" aria-label="Start">
+          <!-- play -->
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button class="iconbtn" id="pauseBtn" title="Pause" aria-label="Pause" disabled>
+          <!-- pause -->
+          <svg viewBox="0 0 24 24"><path d="M10 5h2v14h-2zM14 5h2v14h-2z"/></svg>
+        </button>
+        <button class="iconbtn" id="resetBtn" title="Reset" aria-label="Reset" disabled>
+          <!-- restart arrow -->
+          <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3.3-6.9"/><path d="M21 3v7h-7"/></svg>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -124,10 +126,10 @@
 (function(){
   const $ = id=>document.getElementById(id);
   const label=$('label'), mins=$('mins'), unit=$('unit');
-  const clock=$('clock'), status=$('status');
+  const clock=$('clock');
   const startBtn=$('startBtn'), pauseBtn=$('pauseBtn'), resetBtn=$('resetBtn');
   const bar=$('bar'), fill=$('fill'), pct=$('pct'), elapsed=$('elapsed'), remain=$('remain');
-  const sound=$('sound'), ding=$('ding');
+  const sound=$('sound') || {checked:true}, ding=$('ding'); // sound checkbox may be removed later
   const presets=$('presets');
   const shareLink=$('shareLink');
   const banner=$('banner');
@@ -168,14 +170,13 @@
   function setState(newRunning){
     running=newRunning;
     startBtn.disabled=running; pauseBtn.disabled=!running; resetBtn.disabled=!running && elapsedMs===0;
-    status.textContent = running ? 'In progress' : (elapsedMs && elapsedMs<totalMs ? 'Paused' : 'Ready');
   }
 
   function start(){
     computeTotal();
     if(elapsedMs>=totalMs){ elapsedMs=0; }
     if(!running){ startAt=Date.now()-elapsedMs; timer=requestAnimationFrame(tick); setState(true); }
-    // Show banner; hide inputs & Start + preset chips
+    // show banner; hide inputs + preset chips; hide Start icon (keep disabled too)
     banner.textContent = label.value || 'Untitled Task';
     banner.classList.remove('hidden');
     taskField.classList.add('hidden');
@@ -189,7 +190,7 @@
 
   function reset(){
     cancelAnimationFrame(timer); elapsedMs=0; setState(false); draw();
-    // Restore UI
+    // restore UI
     banner.classList.add('hidden');
     taskField.classList.remove('hidden');
     durationField.classList.remove('hidden');
@@ -207,7 +208,7 @@
     draw(); timer=requestAnimationFrame(tick);
   }
 
-  // Events
+  // events
   [label, mins, unit].forEach(el=>{
     el.addEventListener('input',()=>{ updateShare(); localSave(); draw(); });
     el.addEventListener('change',()=>{ updateShare(); localSave(); draw(); });
@@ -215,7 +216,6 @@
   startBtn.addEventListener('click', ()=>{ start(); localSave(); });
   pauseBtn.addEventListener('click', ()=>{ pause(); localSave(); });
   resetBtn.addEventListener('click', ()=>{ reset(); localSave(); });
-  sound.addEventListener('change', localSave);
 
   presets.addEventListener('click', (e)=>{
     const chip=e.target.closest('.chip');
@@ -232,7 +232,7 @@
   try{ if('Notification' in window && Notification.permission==='default'){ Notification.requestPermission().catch(()=>{}); } }catch(e){}
 
   function localSave(){
-    const data={label:label.value, mins:mins.value, unit:unit.value, sound:sound.checked};
+    const data={label:label.value, mins:mins.value, unit:unit.value};
     try{ localStorage.setItem('focus-timer-v1', JSON.stringify(data)); }catch(e){}
   }
   function localLoad(){
@@ -244,11 +244,10 @@
       if(data.label!=null) label.value=data.label;
       if(data.mins!=null) mins.value=data.mins;
       if(data.unit!=null) unit.value=data.unit;
-      if(saved.sound!=null) sound.checked=saved.sound;
     }catch(e){}
   }
 
-  // Initialize
+  // init
   localLoad(); computeTotal(); draw(); updateShare();
 })();
 </script>
