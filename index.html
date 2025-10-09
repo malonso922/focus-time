@@ -41,44 +41,43 @@
       box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent);
     }
 
-    /* two fields, duration aligned to the right edge */
+    /* two fields; Duration aligned to the right edge */
     .grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:start}
     @media (max-width:640px){.grid{grid-template-columns:minmax(0,1fr)}}
     #durationField{justify-self:end; text-align:right}
     #durationField .row{display:flex; gap:8px; justify-content:flex-end}
 
-    /* progress + centered clock on right */
+    /* progress + dynamic clock on right (bar takes leftover) */
     .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden}
     .fill{height:100%; width:0%; background:var(--accent); transition:width .3s ease, background .3s ease}
     .barRow{
       display:grid;
-      grid-template-columns: 1fr max-content; /* long bar + clock fits its width */
-      gap:8px;  /* a touch tighter so bar feels longer */
+      grid-template-columns: 1fr auto; /* long bar + clock as wide as needed */
+      gap:10px;
       align-items:center;
     }
     .barRow .bar{width:100%; min-width:0}
     .clockRight{
-      width:8.5ch;                 /* narrower box ≈ ~10% more bar */
-      text-align:center;
+      text-align:right;
       font-size:28px; font-weight:700; letter-spacing:.5px;
       font-variant-numeric: tabular-nums;
-      padding-inline:2px;
     }
 
     .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
 
-    .footer{display:flex; gap:10px; align-items:center; margin-top:12px; color:var(--muted)}
+    /* footer is one row: link left, chips center, icons right */
+    .footer{
+      display:grid; grid-template-columns:auto 1fr auto; align-items:center;
+      gap:10px; margin-top:12px; color:var(--muted)
+    }
     .link{color:#b9d4ff; text-decoration:none}
     .link:hover{text-decoration:underline}
-    .actions{margin-left:auto; display:flex; gap:8px; align-items:center}
 
-    /* center-bottom chips */
-    .presets{
-      display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
-      margin-top:12px;
-    }
+    .presets{display:flex; gap:8px; flex-wrap:wrap; justify-content:center}
     .chip{border:1px solid rgba(255,255,255,.15); background:#0f0f0f; padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:600}
     .chip:hover{border-color:var(--accent)}
+
+    .actions{display:flex; gap:8px; align-items:center; justify-self:end}
 
     /* icon buttons (circle, inverted) */
     .iconbtn{
@@ -127,31 +126,24 @@
       </div>
     </div>
 
-    <!-- chips centered at bottom (hide on Start) -->
-    <div class="presets" id="presets">
-      <span class="chip" data-mins="15">15m</span>
-      <span class="chip" data-mins="25">25m</span>
-      <span class="chip" data-mins="45">45m</span>
-      <span class="chip" data-mins="60">60m</span>
-    </div>
-
-    <!-- footer: share on left, action icons on right -->
+    <!-- footer: link | chips | toggle+reset -->
     <div class="footer">
       <a class="link" href="#" id="shareLink">Share preset</a>
+
+      <!-- chips centered in the same row as icons -->
+      <div class="presets" id="presets">
+        <span class="chip" data-mins="15">15m</span>
+        <span class="chip" data-mins="25">25m</span>
+        <span class="chip" data-mins="45">45m</span>
+        <span class="chip" data-mins="60">60m</span>
+      </div>
+
       <div class="actions">
-        <!-- START -->
-        <button class="iconbtn" id="startBtn" title="Start" aria-label="Start">
+        <!-- TOGGLE: play <-> pause -->
+        <button class="iconbtn" id="toggleBtn" title="Start" aria-label="Start">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle class="ring" cx="12" cy="12" r="10" />
-            <path class="shape" d="M10 8v8l6-4z"/>
-          </svg>
-        </button>
-        <!-- PAUSE -->
-        <button class="iconbtn" id="pauseBtn" title="Pause" aria-label="Pause" disabled>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle class="ring" cx="12" cy="12" r="10" />
-            <rect class="shape" x="9" y="7" width="2.8" height="10" rx="0.8"/>
-            <rect class="shape" x="12.8" y="7" width="2.8" height="10" rx="0.8"/>
+            <path class="shape" d="M10 8v8l6-4z"/> <!-- play -->
           </svg>
         </button>
         <!-- RESET -->
@@ -174,7 +166,7 @@
   const $ = id=>document.getElementById(id);
   const label=$('label'), mins=$('mins'), unit=$('unit');
   const clock=$('clock');
-  const startBtn=$('startBtn'), pauseBtn=$('pauseBtn'), resetBtn=$('resetBtn');
+  const toggleBtn=$('toggleBtn'), resetBtn=$('resetBtn');
   const bar=$('bar'), fill=$('fill'), pct=$('pct'), elapsed=$('elapsed'), remain=$('remain');
   const ding=$('ding');
   const presets=$('presets');
@@ -216,20 +208,34 @@
 
   function setState(newRunning){
     running=newRunning;
-    startBtn.disabled=running; pauseBtn.disabled=!running; resetBtn.disabled=!running && elapsedMs===0;
+    toggleBtn.title = running ? 'Pause' : 'Start';
+    toggleBtn.setAttribute('aria-label', toggleBtn.title);
+    resetBtn.disabled = !running && elapsedMs===0;
+
+    // swap icon: play <-> pause
+    toggleBtn.innerHTML = running
+      ? `<svg viewBox="0 0 24 24" aria-hidden="true">
+           <circle class="ring" cx="12" cy="12" r="10" />
+           <rect class="shape" x="9" y="7" width="2.8" height="10" rx="0.8"/>
+           <rect class="shape" x="12.8" y="7" width="2.8" height="10" rx="0.8"/>
+         </svg>`
+      : `<svg viewBox="0 0 24 24" aria-hidden="true">
+           <circle class="ring" cx="12" cy="12" r="10" />
+           <path class="shape" d="M10 8v8l6-4z"/>
+         </svg>`;
   }
 
   function start(){
     computeTotal();
     if(elapsedMs>=totalMs){ elapsedMs=0; }
-    if(!running){ startAt=Date.now()-elapsedMs; timer=requestAnimationFrame(tick); setState(true); }
-    // show banner; hide inputs + chips; hide Start icon
+    if(!running){ startAt=Date.now()-elapsedMs; timer=requestAnimationFrame(tick); }
+    setState(true);
+    // show banner; hide inputs + chips
     banner.textContent = label.value || 'Untitled Task';
     banner.classList.remove('hidden');
     taskField.classList.add('hidden');
     durationField.classList.add('hidden');
     presets.classList.add('hidden');
-    startBtn.classList.add('hidden');
   }
 
   function pause(){
@@ -243,7 +249,6 @@
     taskField.classList.remove('hidden');
     durationField.classList.remove('hidden');
     presets.classList.remove('hidden');
-    startBtn.classList.remove('hidden');
   }
 
   function tick(){
@@ -262,8 +267,11 @@
     el.addEventListener('input',()=>{ updateShare(); localSave(); draw(); });
     el.addEventListener('change',()=>{ updateShare(); localSave(); draw(); });
   });
-  startBtn.addEventListener('click', ()=>{ start(); localSave(); });
-  pauseBtn.addEventListener('click', ()=>{ pause(); localSave(); });
+
+  toggleBtn.addEventListener('click', ()=>{
+    running ? pause() : start();
+    localSave();
+  });
   resetBtn.addEventListener('click', ()=>{ reset(); localSave(); });
 
   presets.addEventListener('click', (e)=>{
@@ -275,7 +283,7 @@
   });
 
   document.addEventListener('keydown', (e)=>{
-    if(e.code==='Space'){ e.preventDefault(); running? pause(): start(); }
+    if(e.code==='Space'){ e.preventDefault(); running ? pause() : start(); }
     if(e.key==='r' || e.key==='R'){ reset(); }
   });
   try{ if('Notification' in window && Notification.permission==='default'){ Notification.requestPermission().catch(()=>{}); } }catch(e){}
