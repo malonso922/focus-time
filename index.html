@@ -14,7 +14,7 @@
       --panel:#161616;      /* card bg */
       --accent:#4da3ff;
       --accent-2:#49d47a;
-      --focus:#a970ff;      /* ClickUp-ish focus ring */
+      --focus:#a970ff;      /* focus ring */
       --text:#eef3ff;
       --muted:#a7b2cc;
       --radius:16px;
@@ -40,13 +40,12 @@
       border-color:var(--focus);
       box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent);
     }
+
+    /* two fields, duration aligned to the right edge */
     .grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:start}
     @media (max-width:640px){.grid{grid-template-columns:minmax(0,1fr)}}
-
-    /* chips under Duration */
-    .presets{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
-    .chip{border:1px solid rgba(255,255,255,.15); background:#0f0f0f; padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:600}
-    .chip:hover{border-color:var(--accent)}
+    #durationField{justify-self:end; text-align:right}
+    #durationField .row{display:flex; gap:8px; justify-content:flex-end}
 
     /* progress + centered clock on right */
     .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden}
@@ -54,15 +53,15 @@
     .barRow{
       display:grid;
       grid-template-columns: 1fr max-content; /* long bar + clock fits its width */
-      gap:10px;
+      gap:8px;  /* a touch tighter so bar feels longer */
       align-items:center;
     }
-    .barRow .bar{width:100%; min-width:0}  /* keep the long bar */
+    .barRow .bar{width:100%; min-width:0}
     .clockRight{
-      width:9.5ch;                    /* fits mm:ss and h:mm:ss */
-      text-align:center;              /* equal padding left/right */
+      width:8.5ch;                 /* narrower box ≈ ~10% more bar */
+      text-align:center;
       font-size:28px; font-weight:700; letter-spacing:.5px;
-      font-variant-numeric: tabular-nums; /* monospaced digits */
+      font-variant-numeric: tabular-nums;
       padding-inline:2px;
     }
 
@@ -73,11 +72,18 @@
     .link:hover{text-decoration:underline}
     .actions{margin-left:auto; display:flex; gap:8px; align-items:center}
 
+    /* center-bottom chips */
+    .presets{
+      display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
+      margin-top:12px;
+    }
+    .chip{border:1px solid rgba(255,255,255,.15); background:#0f0f0f; padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:600}
+    .chip:hover{border-color:var(--accent)}
+
     /* icon buttons (circle, inverted) */
     .iconbtn{
       width:36px; height:36px; display:grid; place-items:center; border-radius:999px;
-      border:none; background:transparent; cursor:pointer;
-      color:#e8f0ff; /* icon color */
+      border:none; background:transparent; cursor:pointer; color:#e8f0ff;
     }
     .iconbtn:hover{ color:var(--accent); }
     .iconbtn svg{ width:22px; height:22px; display:block }
@@ -99,18 +105,12 @@
       </div>
       <div id="durationField">
         <label>Duration</label>
-        <div style="display:flex; gap:8px">
+        <div class="row">
           <input id="mins" type="number" min="1" step="1" value="25" style="width:110px"/>
           <select id="unit">
             <option value="min" selected>minutes</option>
             <option value="hr">hours</option>
           </select>
-        </div>
-        <div class="presets" id="presets">
-          <span class="chip" data-mins="15">15m</span>
-          <span class="chip" data-mins="25">25m</span>
-          <span class="chip" data-mins="45">45m</span>
-          <span class="chip" data-mins="60">60m</span>
         </div>
       </div>
     </div>
@@ -118,15 +118,21 @@
     <!-- progress + clock on right -->
     <div style="margin-top:12px">
       <div class="barRow">
-        <div class="bar" id="bar">
-          <div class="fill" id="fill"></div>
-        </div>
+        <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
         <div class="clockRight" id="clock">25:00</div>
       </div>
       <div class="meta">
         <div><span id="pct">0%</span> complete</div>
         <div>Elapsed: <span id="elapsed">0:00</span> • Remaining: <span id="remain">25:00</span></div>
       </div>
+    </div>
+
+    <!-- chips centered at bottom (hide on Start) -->
+    <div class="presets" id="presets">
+      <span class="chip" data-mins="15">15m</span>
+      <span class="chip" data-mins="25">25m</span>
+      <span class="chip" data-mins="45">45m</span>
+      <span class="chip" data-mins="60">60m</span>
     </div>
 
     <!-- footer: share on left, action icons on right -->
@@ -217,11 +223,12 @@
     computeTotal();
     if(elapsedMs>=totalMs){ elapsedMs=0; }
     if(!running){ startAt=Date.now()-elapsedMs; timer=requestAnimationFrame(tick); setState(true); }
-    // show banner; hide inputs + presets; hide Start icon
+    // show banner; hide inputs + chips; hide Start icon
     banner.textContent = label.value || 'Untitled Task';
     banner.classList.remove('hidden');
     taskField.classList.add('hidden');
     durationField.classList.add('hidden');
+    presets.classList.add('hidden');
     startBtn.classList.add('hidden');
   }
 
@@ -235,6 +242,7 @@
     banner.classList.add('hidden');
     taskField.classList.remove('hidden');
     durationField.classList.remove('hidden');
+    presets.classList.remove('hidden');
     startBtn.classList.remove('hidden');
   }
 
