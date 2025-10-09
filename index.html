@@ -64,7 +64,9 @@
 
     .hidden{display:none!important}
     .banner{margin:-4px 0 8px; font-size:16px; font-weight:800; text-align:center; color:#e6eeff}
-  </style>
+    /* ensure progress bar expands next to clock */
+  .barRow .bar{flex:1; min-width:0}
+</style>
 </head>
 <body>
   <div class="card" id="app">
