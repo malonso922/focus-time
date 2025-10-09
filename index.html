@@ -70,24 +70,26 @@
         <label>Task name</label>
         <input id="label" type="text" placeholder="e.g., Series 65 Study Sprint" />
       </div>
-      <div id="durationField">
-        <label>Duration</label>
-        <div style="display:flex; gap:8px">
-          <input id="mins" type="number" min="1" step="1" value="25" style="width:110px"/>
-          <select id="unit">
-            <option value="min" selected>minutes</option>
-            <option value="hr">hours</option>
-          </select>
-        </div>
+      <div id=\"durationField\">
+        <label>Duration<\/label>
+        <div style=\"display:flex; gap:8px\">
+          <input id=\"mins\" type=\"number\" min=\"1\" step=\"1\" value=\"25\" style=\"width:110px\"\/>
+          <select id=\"unit\">
+            <option value=\"min\" selected>minutes<\/option>
+            <option value=\"hr\">hours<\/option>
+          <\/select>
+        <\/div>
+        <div class=\"presets\" id=\"presets\">
+          <span class=\"chip\" data-mins=\"15\">15m<\/span>
+          <span class=\"chip\" data-mins=\"25\">25m<\/span>
+          <span class=\"chip\" data-mins=\"45\">45m<\/span>
+          <span class=\"chip\" data-mins=\"60\">60m<\/span>
+        <\/div>
+      <\/div>
       </div>
     </div>
 
-    <div class="presets" id="presets">
-      <span class="chip" data-mins="15">15m</span>
-      <span class="chip" data-mins="25">25m</span>
-      <span class="chip" data-mins="45">45m</span>
-      <span class="chip" data-mins="60">60m</span>
-    </div>
+    
 
     <div class="timer">
       <div class="timebox">
@@ -105,26 +107,18 @@
     </div>
 
     <div style="margin-top:12px">
-      <div class="bar" id="bar">
-        <div class="fill" id="fill"></div>
-        <div class="bar-label" id="barLabel">0%</div>
-      </div>
-      <div class="meta">
+      <div class=\"bar\" id=\"bar\">
+        <div class=\"fill\" id=\"fill\"><\/div>
+      <\/div>
+      <div class=\"meta\">
         <div><span id="pct">0%</span> complete</div>
         <div>Elapsed: <span id="elapsed">0:00</span> • Remaining: <span id="remain">25:00</span></div>
       </div>
     </div>
 
-    <div class="footer">
-      <label style="display:flex; align-items:center; gap:6px; font-size:12px">
-        <input id="autorestart" type="checkbox" /> Auto-restart
-      </label>
-      <label style="display:flex; align-items:center; gap:6px; font-size:12px">
-        <input id="compactToggle" type="checkbox" /> Compact
-      </label>
-      <span style="margin-left:auto" class="help">Hotkeys: <span class="kbd">Space</span> start/pause • <span class="kbd">R</span> reset</span>
-      <a class="link" href="#" id="shareLink" style="margin-left:10px">Share preset</a>
-    </div>
+    <div class=\"footer\">
+      <a class=\"link\" href=\"#\" id=\"shareLink\">Share preset<\/a>
+    <\/div>
   </div>
 
   <audio id="ding" preload="auto">
@@ -137,10 +131,9 @@
   const label=$('label'), mins=$('mins'), unit=$('unit');
   const clock=$('clock'), status=$('status');
   const startBtn=$('startBtn'), pauseBtn=$('pauseBtn'), resetBtn=$('resetBtn');
-  const bar=$('bar'), fill=$('fill'), pct=$('pct'), elapsed=$('elapsed'), remain=$('remain'), barLabel=$('barLabel');
+  const bar=$('bar'), fill=$('fill'), pct=$('pct'), elapsed=$('elapsed'), remain=$('remain');
   const sound=$('sound'), ding=$('ding');
-  const autorestart=$('autorestart');
-  const compactToggle=$('compactToggle');
+  
   const presets=$('presets');
   const shareLink=$('shareLink');
   const banner=$('banner');
@@ -173,7 +166,6 @@
     fill.style.width = p + '%';
     fill.style.background = p>=100? '#646b7a' : (p<67? 'var(--accent)' : 'var(--accent-2)');
     pct.textContent = p + '%';
-    barLabel.textContent = p + '%';
     clock.textContent = fmt(totalMs - done);
     elapsed.textContent = fmt(done);
     remain.textContent = fmt(totalMs - done);
@@ -216,7 +208,7 @@
       elapsedMs=totalMs; draw(); setState(false);
       if(sound.checked){ try{ ding.currentTime=0; ding.play().catch(()=>{});}catch(e){} }
       try{ if('Notification' in window && Notification.permission==='granted'){ new Notification('Timer done', { body: label.value || 'Focus timer complete' }); } }catch(e){}
-      if(autorestart.checked){ setTimeout(()=>{ elapsedMs=0; start(); }, 800); }
+      , 800); }
       return;
     }
     draw(); timer=requestAnimationFrame(tick);
@@ -232,7 +224,7 @@
   resetBtn.addEventListener('click', ()=>{ reset(); localSave(); });
   sound.addEventListener('change', localSave);
 
-  compactToggle.addEventListener('change', ()=>{ document.body.classList.toggle('compact', compactToggle.checked); localSave(); });
+   localSave(); });
   presets.addEventListener('click', (e)=>{
     const chip=e.target.closest('.chip');
     if(!chip) return;
@@ -247,13 +239,23 @@
   try{ if('Notification' in window && Notification.permission==='default'){ Notification.requestPermission().catch(()=>{}); } }catch(e){}
 
   function localSave(){
-    const data={label:label.value, mins:mins.value, unit:unit.value, autorestart:autorestart.checked, compact:compactToggle.checked, sound:sound.checked};
+    const data={label:label.value, mins:mins.value, unit:unit.value, sound:sound.checked};
+    try{ localStorage.setItem('focus-timer-v1', JSON.stringify(data)); }catch(e){}
+  };
     try{ localStorage.setItem('focus-timer-v1', JSON.stringify(data)); }catch(e){}
   }
   function localLoad(){
     try{
       const q=new URLSearchParams(location.search);
       const fromUrl = { label:q.get('label'), mins:q.get('mins'), unit:q.get('unit') };
+      const saved=JSON.parse(localStorage.getItem('focus-timer-v1')||'{}');
+      const data={...saved, ...Object.fromEntries(Object.entries(fromUrl).filter(([,v])=>v!==null))};
+      if(data.label!=null) label.value=data.label;
+      if(data.mins!=null) mins.value=data.mins;
+      if(data.unit!=null) unit.value=data.unit;
+      if(saved.sound!=null) sound.checked=saved.sound;
+    }catch(e){}
+  };
       const saved=JSON.parse(localStorage.getItem('focus-timer-v1')||'{}');
       const data={...saved, ...Object.fromEntries(Object.entries(fromUrl).filter(([,v])=>v!==null))};
       if(data.label!=null) label.value=data.label;
@@ -272,4 +274,3 @@
 </script>
 </body>
 </html>
-
