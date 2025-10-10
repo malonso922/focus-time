@@ -40,12 +40,16 @@
     .preRow{
       display:flex; align-items:flex-end; gap:8px; min-width:0;
     }
-    .field input, .field select{
+    /* Shared input look (field + addRow) */
+    .field input, .field select,
+    .addRow input, .addRow select{
       border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:#eef3ff; padding:10px 12px; outline:none;
       transition:border-color .15s ease, box-shadow .15s ease;
     }
-    .field input::placeholder{ color:#6f7a96 }
-    .field input:focus, .field select:focus{
+    .field input::placeholder,
+    .addRow input::placeholder{ color:#6f7a96 }
+    .field input:focus, .field select:focus,
+    .addRow input:focus, .addRow select:focus{
       border-color:var(--focus);
       box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent);
     }
@@ -136,7 +140,7 @@
     <!-- Top bar -->
     <div class="topbar">
       <div class="leftTop">
-        <!-- Pre-start: Task + Duration (placeholders instead of labels) -->
+        <!-- Pre-start: Task + Duration -->
         <div class="preRow" id="preRow">
           <div class="field taskField">
             <input id="label" type="text" placeholder="Task name" />
