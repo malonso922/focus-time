@@ -33,7 +33,7 @@
     }
     label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px}
     input,select,button{
-      border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:var(--text); padding:10px 12px; outline:none;
+      border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:#eef3ff; padding:10px 12px; outline:none;
       transition:border-color .15s ease, box-shadow .15s ease;
     }
     input:focus,select:focus{
@@ -267,6 +267,11 @@
     el.addEventListener('change',()=>{ updateShare(); localSave(); draw(); });
   });
 
+  // Removed Spacebar hotkey; only keep 'R' for reset
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='r' || e.key==='R'){ reset(); }
+  });
+
   toggleBtn.addEventListener('click', ()=>{
     running ? pause() : start();
     localSave();
@@ -281,10 +286,6 @@
     elapsedMs=0; draw(); updateShare(); localSave();
   });
 
-  document.addEventListener('keydown', (e)=>{
-    if(e.code==='Space'){ e.preventDefault(); running ? pause() : start(); }
-    if(e.key==='r' || e.key==='R'){ reset(); }
-  });
   try{ if('Notification' in window && Notification.permission==='default'){ Notification.requestPermission().catch(()=>{}); } }catch(e){}
 
   function localSave(){
