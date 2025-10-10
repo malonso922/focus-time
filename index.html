@@ -33,16 +33,22 @@
       display:flex; align-items:center; justify-content:space-between;
       gap:8px; margin-bottom:8px;
     }
-    .leftTop{ display:flex; align-items:center; gap:10px; min-width:0; }
+    .leftTop{
+      position:relative; display:flex; align-items:center; gap:10px;
+      min-width:0; flex:1 1 auto;
+    }
     .banner{
       font-size:16px; font-weight:800; color:#e6eeff;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      max-width:60%;
+      /* Reserve space for the % chip that is absolutely positioned on the right */
+      padding-right:80px; /* wide enough for "100%" comfortably */
+      flex:1 1 auto; min-width:0;
     }
     .banner.hidden{visibility:hidden} /* keep row height stable */
     .pctTop{
-      font-size:16px; font-weight:800; color:#cfe0ff;
-      white-space:nowrap;
+      position:absolute; right:0; top:50%; transform:translateY(-50%);
+      font-size:16px; font-weight:800; white-space:nowrap;
+      color:#cfe0ff; transition: color .25s ease;
     }
 
     .actions{ display:flex; align-items:center; gap:8px }
@@ -58,8 +64,8 @@
     /* Task name + Duration inline; duration scooted left (tight gap) */
     .grid-inline{ display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; margin-bottom:6px; }
     .field{ min-width:220px; flex:1 1 auto }
-    #durationField{ flex:0 0 auto } /* don't push it away */
-    .field label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px}
+    #durationField{ flex:0 0 auto } /* keep it tight to the name */
+    .field label{display:block; font-size:12px; color:#a7b2cc; margin-bottom:4px}
     input,select{
       border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:#eef3ff; padding:10px 12px; outline:none;
       transition:border-color .15s ease, box-shadow .15s ease;
@@ -71,7 +77,6 @@
     .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden}
     .fill{ height:100%; width:0%; background: linear-gradient(90deg,var(--bar-start),var(--bar-end)); transition:width .3s ease, background .3s ease, opacity .25s ease; }
     .barRow{ display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center; }
-
     .clockRight{ text-align:right; font-size:28px; font-weight:700; letter-spacing:.5px; font-variant-numeric: tabular-nums; }
 
     /* ---------- Tasks ---------- */
@@ -128,7 +133,7 @@
     <!-- Top bar: banner+% left | controls right -->
     <div class="topbar">
       <div class="leftTop">
-        <div class="banner hidden" id="banner"></div>
+        <div class="banner hidden" id="banner" title=""></div>
         <div class="pctTop" id="pctTop">0%</div>
       </div>
       <div class="actions">
@@ -245,8 +250,15 @@
     shareLink.href = `${location.origin}${location.pathname}?${params.toString()}`;
   }
   function setGradient(p){
-    if(p < 67){ fill.style.setProperty('--bar-start','#2e7ddd'); fill.style.setProperty('--bar-end','#5aa8ff'); }
-    else      { fill.style.setProperty('--bar-start','#3dbd6d'); fill.style.setProperty('--bar-end','#6be28f'); }
+    if(p < 67){ 
+      fill.style.setProperty('--bar-start','#2e7ddd'); 
+      fill.style.setProperty('--bar-end','#5aa8ff'); 
+      pctTop.style.color = '#cfe0ff';
+    } else { 
+      fill.style.setProperty('--bar-start','#3dbd6d'); 
+      fill.style.setProperty('--bar-end','#6be28f'); 
+      pctTop.style.color = '#6be28f';
+    }
   }
   function draw(){
     const done=clamp(elapsedMs,0,totalMs);
@@ -278,7 +290,9 @@
     if(!running){ startAt=Date.now()-elapsedMs; timer=requestAnimationFrame(tick); }
     setState(true);
     // show banner text inline on the left
-    banner.textContent = label.value || 'Untitled Task';
+    const taskText = label.value || 'Untitled Task';
+    banner.textContent = taskText;
+    banner.title = taskText;
     banner.classList.remove('hidden');
     // hide inputs row
     taskField.classList.add('hidden');
@@ -290,7 +304,7 @@
   function reset(){
     cancelAnimationFrame(timer); elapsedMs=0; setState(false); draw();
     // hide banner text but keep topbar layout height
-    banner.classList.add('hidden'); banner.textContent = '';
+    banner.classList.add('hidden'); banner.textContent = ''; banner.removeAttribute('title');
     taskField.classList.remove('hidden');
     durationField.classList.remove('hidden');
   }
@@ -356,12 +370,10 @@
       title.title = 'Click to set timer from this task';
       title.addEventListener('click', ()=>{
         label.value = t.title;
-        // if estimate exists, apply it too
         if(t.estimate){
           const parsed = parseEstimate(t.estimate);
           if(parsed){ mins.value = parsed.mins; unit.value = 'min'; }
         }
-        // refresh total and UI
         elapsedMs = 0; computeTotal(); draw(); updateShare(); saveAll();
       });
 
@@ -450,7 +462,7 @@
   toggleBtn.addEventListener('click', ()=>{ running ? pause() : start(); saveAll(); });
   resetBtn.addEventListener('click', ()=>{ reset(); saveAll(); });
 
-  // Keyboard: Enter adds task (from either field), then refocus title
+  // Enter adds task (from either field), then refocus title
   document.addEventListener('keydown', (e)=>{
     if(e.key==='Enter' && (document.activeElement===taskTitle || document.activeElement===taskEst)){
       e.preventDefault(); addTask();
