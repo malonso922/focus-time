@@ -34,7 +34,7 @@
     .leftTop{ min-width:0; flex:1 1 auto; }
     .hidden{ display:none !important; }
 
-    /* Inputs --------------------------------------------------------------- */
+    /* Pre-start inputs ------------------------------------------------------ */
     .preRow{ display:flex; align-items:flex-end; gap:8px; min-width:0; }
     .field input, .field select,
     .addRow input, .addRow select{
@@ -51,18 +51,23 @@
     .durationField{ display:flex; gap:8px; align-items:center }
     .durationField input{ width:120px }
 
-    /* Running row (banner + % inline with constant gap) */
-    .runRow{ display:flex; align-items:center; gap:0; min-width:0; }
+    /* Running row (banner + % inline beside it — no absolute positioning) */
+    .runRow{
+      display:flex; align-items:center; gap:0; min-width:0;
+      /* ensure this row stays on the left side while actions sit on the right */
+      flex:1 1 auto;
+    }
     .banner{
       font-size:16px; font-weight:800; color:#e6eeff;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      flex:1 1 auto; min-width:0; /* takes remaining width, ellipsizes before % */
+      flex:1 1 auto; min-width:0;
     }
     .pctTop{
+      /* IMPORTANT: static flow, sits right next to banner with a constant gap */
       margin-left:var(--pct-gap);
       font-size:16px; font-weight:800; white-space:nowrap;
       color:#cfe0ff; transition: color .25s ease;
-      flex:0 0 auto; /* keeps its own width; stays beside banner */
+      flex:0 0 auto;
     }
 
     /* Actions -------------------------------------------------------------- */
@@ -150,7 +155,7 @@
           </div>
         </div>
 
-        <!-- Running: Banner + % inline -->
+        <!-- Running: Banner + % inline (left side) -->
         <div class="runRow hidden" id="runRow">
           <div class="banner" id="banner" title=""></div>
           <div class="pctTop hidden" id="pctTop">0%</div>
@@ -377,7 +382,7 @@
         elapsedMs=0; computeTotal(); draw(); updateShare(); saveAll();
       });
 
-      // SWAPPED: trash before est (chip)
+      /* Order: check | title | trash | est (trash shows on hover) */
       const trash=document.createElement('button');
       trash.className='trash'; trash.title='Delete task';
       trash.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><path class="shape" fill="currentColor" d="M9 3h6l1 2h4v2h-1l-1 12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 7H4V5h4l1-2zm1.5 6v9h2V9h-2z"/></svg>`;
@@ -407,7 +412,6 @@
         saveAll();
       });
 
-      // Append in new order: check | title | trash | est
       row.appendChild(check);
       row.appendChild(title);
       row.appendChild(trash);
