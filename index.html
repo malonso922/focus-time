@@ -15,13 +15,14 @@
       --accent:#4da3ff;
       --accent-2:#49d47a;
 
-      /* gradient stops (dark -> light) for progress fill */
-      --bar-start:#2e7ddd;  /* darker left */
-      --bar-end:#5aa8ff;    /* lighter right */
+      /* progress gradient (dark -> light) */
+      --bar-start:#2e7ddd;
+      --bar-end:#5aa8ff;
 
       --focus:#a970ff;      /* focus ring */
       --text:#eef3ff;
       --muted:#a7b2cc;
+      --danger:#ff5a5a;
       --radius:16px;
     }
     *,*::before,*::after{box-sizing:border-box}
@@ -34,57 +35,13 @@
     .card{
       width:min(680px,100%); background:var(--panel);
       border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:0 10px 30px rgba(0,0,0,.4);
-      padding:16px 16px 18px;
-    }
-    label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px}
-    input,select,button{
-      border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:#eef3ff; padding:10px 12px; outline:none;
-      transition:border-color .15s ease, box-shadow .15s ease;
-    }
-    input:focus,select:focus{
-      border-color:var(--focus);
-      box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent);
+      padding:12px 16px 18px;
     }
 
-    /* top fields; Duration aligned to the right edge */
-    .grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:start}
-    @media (max-width:640px){.grid{grid-template-columns:minmax(0,1fr)}}
-    #durationField{justify-self:end; text-align:right}
-    #durationField .row{display:flex; gap:8px; justify-content:flex-end}
-
-    /* progress + dynamic clock on right (bar takes leftover) */
-    .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden}
-    .fill{
-      height:100%; width:0%;
-      background: linear-gradient(90deg,var(--bar-start),var(--bar-end)); /* dark -> light */
-      transition:width .3s ease, background .3s ease, opacity .25s ease;
+    /* --- Top bar actions (moved to top-left) --- */
+    .topbar{
+      display:flex; align-items:center; gap:8px; margin-bottom:8px;
     }
-    .barRow{
-      display:grid;
-      grid-template-columns: 1fr auto; /* long bar + clock as wide as needed */
-      gap:10px;
-      align-items:center;
-    }
-    .barRow .bar{width:100%; min-width:0}
-    .clockRight{
-      text-align:right;
-      font-size:28px; font-weight:700; letter-spacing:.5px;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
-
-    /* footer: chips center | toggle+reset right (Share link moved to Tips) */
-    .footer{
-      display:grid; grid-template-columns:1fr auto; align-items:center;
-      gap:10px; margin-top:12px; color:var(--muted)
-    }
-    .presets{display:flex; gap:8px; flex-wrap:wrap; justify-content:center}
-    .chip{border:1px solid rgba(255,255,255,.15); background:#0f0f0f; padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:600}
-    .chip:hover{border-color:var(--accent)}
-    .actions{display:flex; gap:8px; align-items:center; justify-self:end}
-
-    /* icon buttons (circle, inverted) */
     .iconbtn{
       width:36px; height:36px; display:grid; place-items:center; border-radius:999px;
       border:none; background:transparent; cursor:pointer; color:#e8f0ff;
@@ -94,13 +51,41 @@
     .iconbtn .ring{ fill:none; stroke:currentColor; stroke-width:2 }
     .iconbtn .shape{ fill:currentColor }
 
-    .hidden{display:none!important}
-    .banner{margin:-4px 0 8px; font-size:16px; font-weight:800; text-align:center; color:#e6eeff}
-
-    /* ---------- Tasks section ---------- */
-    .tasks{
-      margin-top:14px; border-top:1px dashed rgba(255,255,255,.07); padding-top:12px;
+    /* Task name + Duration inline and tight */
+    .grid-inline{
+      display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:6px;
     }
+    .field{ min-width:220px; flex:1 1 auto }
+    .field label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px}
+    input,select{
+      border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:#eef3ff; padding:10px 12px; outline:none;
+      transition:border-color .15s ease, box-shadow .15s ease;
+    }
+    input:focus,select:focus{
+      border-color:var(--focus);
+      box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent);
+    }
+    #durationField .row{display:flex; gap:8px; align-items:center}
+
+    /* Banner now left-aligned (not centered) */
+    .banner{margin:0 0 6px; font-size:16px; font-weight:800; text-align:left; color:#e6eeff}
+
+    /* progress + dynamic clock on right */
+    .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden}
+    .fill{
+      height:100%; width:0%;
+      background: linear-gradient(90deg,var(--bar-start),var(--bar-end));
+      transition:width .3s ease, background .3s ease, opacity .25s ease;
+    }
+    .barRow{
+      display:grid;
+      grid-template-columns: 1fr auto; gap:10px; align-items:center;
+    }
+    .clockRight{ text-align:right; font-size:28px; font-weight:700; letter-spacing:.5px; font-variant-numeric: tabular-nums; }
+    .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
+
+    /* ---------- Tasks ---------- */
+    .tasks{ margin-top:12px; border-top:1px dashed rgba(255,255,255,.07); padding-top:12px; }
     .tasksHeader{
       display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none;
       color:#dbe6ff; font-weight:800; letter-spacing:.2px;
@@ -111,7 +96,7 @@
 
     .list{ margin-top:6px; display:grid; gap:6px }
     .item{
-      display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center;
+      display:grid; grid-template-columns:auto 1fr auto auto; gap:8px; align-items:center;
       padding:8px 10px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:#121212;
     }
     .check{
@@ -127,16 +112,24 @@
     }
     .est[contenteditable="true"]{ outline:none; border-color:var(--focus); box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent) }
 
-    /* Add row (bottom of list) */
-    .addRow{
-      display:grid; grid-template-columns: 1fr auto auto; gap:8px; margin-top:10px; align-items:center;
+    /* Trash can (hidden until hover) */
+    .trash{
+      display:grid; place-items:center; width:30px; height:30px; color:transparent; cursor:pointer; border:none; background:transparent;
     }
+    .item:hover .trash{ color:var(--danger); }
+    .trash svg{ width:18px; height:18px; }
+
+    /* Add row at bottom */
+    .addRow{ display:grid; grid-template-columns: 1fr auto auto; gap:8px; margin-top:10px; align-items:center }
     .addRow input[name="taskTitle"]{ width:100% }
     .addRow input[name="taskEst"]{ width:110px; text-align:center }
-    /* Plus icon style for Add button */
-    #addBtn.iconbtn{ width:36px; height:36px; padding:0; }
+    #addBtn{
+      background:transparent; border:none; color:#fff; cursor:pointer;
+      font-size:22px; line-height:1; width:36px; height:36px; display:grid; place-items:center;
+    }
+    #addBtn:hover{ color:var(--accent); }
 
-    /* Tips collapsible */
+    /* Tips collapsible now BELOW add row */
     .tips{ margin-top:8px; }
     .tipsHeader{
       display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none;
@@ -147,18 +140,39 @@
     .tipsBody{ color:var(--muted); font-size:12px; margin-top:6px; display:block }
     .tipsBody .link{ color:#b9d4ff; text-decoration:none }
     .tipsBody .link:hover{ text-decoration:underline }
+
+    .hidden{display:none!important}
   </style>
 </head>
 <body>
   <div class="card" id="app">
+
+    <!-- Top-left controls -->
+    <div class="topbar">
+      <button class="iconbtn" id="toggleBtn" title="Start" aria-label="Start">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle class="ring" cx="12" cy="12" r="10" />
+          <path class="shape" d="M10 8v8l6-4z"/> <!-- play -->
+        </svg>
+      </button>
+      <button class="iconbtn" id="resetBtn" title="Reset" aria-label="Reset" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle class="ring" cx="12" cy="12" r="10" />
+          <rect class="shape" x="8.5" y="8.5" width="7" height="7" rx="1.2"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Left-aligned banner on start -->
     <div class="banner hidden" id="banner"></div>
 
-    <div class="grid">
-      <div id="taskField">
+    <!-- Task + Duration inline -->
+    <div class="grid-inline">
+      <div class="field" id="taskField">
         <label>Task name</label>
         <input id="label" type="text" placeholder="e.g., Series 65 Study Sprint" />
       </div>
-      <div id="durationField">
+      <div class="field" id="durationField">
         <label>Duration</label>
         <div class="row">
           <input id="mins" type="number" min="1" step="1" value="25" style="width:110px"/>
@@ -171,7 +185,7 @@
     </div>
 
     <!-- progress + clock on right -->
-    <div style="margin-top:12px">
+    <div style="margin-top:8px">
       <div class="barRow">
         <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
         <div class="clockRight" id="clock">25:00</div>
@@ -179,33 +193,6 @@
       <div class="meta">
         <div><span id="pct">0%</span> complete</div>
         <div>Elapsed: <span id="elapsed">0:00</span></div>
-      </div>
-    </div>
-
-    <!-- footer: chips center | toggle+reset right -->
-    <div class="footer">
-      <div class="presets" id="presets">
-        <span class="chip" data-mins="15">15m</span>
-        <span class="chip" data-mins="25">25m</span>
-        <span class="chip" data-mins="45">45m</span>
-        <span class="chip" data-mins="60">60m</span>
-      </div>
-
-      <div class="actions">
-        <!-- TOGGLE: play <-> pause -->
-        <button class="iconbtn" id="toggleBtn" title="Start" aria-label="Start">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle class="ring" cx="12" cy="12" r="10" />
-            <path class="shape" d="M10 8v8l6-4z"/> <!-- play -->
-          </svg>
-        </button>
-        <!-- RESET -->
-        <button class="iconbtn" id="resetBtn" title="Reset" aria-label="Reset" disabled>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle class="ring" cx="12" cy="12" r="10" />
-            <rect class="shape" x="8.5" y="8.5" width="7" height="7" rx="1.2"/>
-          </svg>
-        </button>
       </div>
     </div>
 
@@ -219,7 +206,14 @@
 
       <div class="list" id="taskList"></div>
 
-      <!-- Tips (collapsible) + Share preset -->
+      <!-- Add row at bottom -->
+      <div class="addRow" id="addRow">
+        <input name="taskTitle" id="taskTitle" type="text" placeholder="Add a task…"/>
+        <input name="taskEst" id="taskEst" type="text" placeholder="e.g., 25m or 2h" />
+        <button id="addBtn" title="Add task" aria-label="Add task">+</button>
+      </div>
+
+      <!-- Tips (now below add row) + Share preset -->
       <div class="tips">
         <div class="tipsHeader" id="tipsHeader" title="Toggle tips">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 10l4 4 4-4"/></svg>
@@ -229,18 +223,6 @@
           Tip: click an estimate to set the timer •
           <a class="link" href="#" id="shareLink">Share preset</a>
         </div>
-      </div>
-
-      <!-- Add row at bottom with + icon -->
-      <div class="addRow" id="addRow">
-        <input name="taskTitle" id="taskTitle" type="text" placeholder="Add a task…"/>
-        <input name="taskEst" id="taskEst" type="text" placeholder="e.g., 25m or 2h" />
-        <button id="addBtn" class="iconbtn" title="Add task" aria-label="Add task">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle class="ring" cx="12" cy="12" r="10" />
-            <path class="shape" d="M12 7v10M7 12h10"/>
-          </svg>
-        </button>
       </div>
     </div>
   </div>
@@ -257,7 +239,6 @@
   const toggleBtn=$('toggleBtn'), resetBtn=$('resetBtn');
   const bar=$('bar'), fill=$('fill'), pct=$('pct'), elapsed=$('elapsed');
   const ding=$('ding');
-  const presets=$('presets');
   const shareLink=$('shareLink');
   const banner=$('banner');
   const taskField=$('taskField');
@@ -305,6 +286,7 @@
     toggleBtn.title = running ? 'Pause' : 'Start';
     toggleBtn.setAttribute('aria-label', toggleBtn.title);
     resetBtn.disabled = !running && elapsedMs===0;
+    // play <-> pause glyph
     toggleBtn.innerHTML = running
       ? `<svg viewBox="0 0 24 24" aria-hidden="true">
            <circle class="ring" cx="12" cy="12" r="10" />
@@ -321,11 +303,11 @@
     if(elapsedMs>=totalMs){ elapsedMs=0; }
     if(!running){ startAt=Date.now()-elapsedMs; timer=requestAnimationFrame(tick); }
     setState(true);
+    // left-aligned banner + hide inputs
     banner.textContent = label.value || 'Untitled Task';
     banner.classList.remove('hidden');
     taskField.classList.add('hidden');
     durationField.classList.add('hidden');
-    presets.classList.add('hidden');
   }
   function pause(){
     if(running){ cancelAnimationFrame(timer); elapsedMs=Date.now()-startAt; setState(false); draw(); }
@@ -335,7 +317,6 @@
     banner.classList.add('hidden');
     taskField.classList.remove('hidden');
     durationField.classList.remove('hidden');
-    presets.classList.remove('hidden');
   }
   function tick(){
     elapsedMs = Date.now()-startAt;
@@ -396,7 +377,7 @@
     return `${totalMin}m`;
   }
 
-  /* Tasks UI updates */
+  /* Tasks UI */
   function renderTasks(){
     taskList.innerHTML = '';
     let open = 0;
@@ -442,7 +423,21 @@
         saveAll();
       });
 
-      row.appendChild(check); row.appendChild(title); row.appendChild(est);
+      const trash = document.createElement('button');
+      trash.className = 'trash';
+      trash.title = 'Delete task';
+      trash.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">
+        <path class="shape" fill="currentColor" d="M9 3h6l1 2h4v2h-1l-1 12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 7H4V5h4l1-2zm1.5 6v9h2V9h-2z"/>
+      </svg>`;
+      trash.addEventListener('click', ()=>{
+        todos = todos.filter(x=>x!==t);
+        saveAll(); renderTasks();
+      });
+
+      row.appendChild(check);
+      row.appendChild(title);
+      row.appendChild(est);
+      row.appendChild(trash);
       taskList.appendChild(row);
     });
     tasksCount.textContent = `${open} open`;
@@ -466,19 +461,19 @@
     if(collapsedTasks){
       tasksHeader.classList.add('collapsed');
       taskList.style.display='none';
+      addRow.style.display='none';
       tipsHeader.style.display='none';
       tipsBody.style.display='none';
-      addRow.style.display='none';
     }else{
       tasksHeader.classList.remove('collapsed');
       taskList.style.display='';
+      addRow.style.display='';
       tipsHeader.style.display='';
       tipsBody.style.display= collapsedTips ? 'none' : 'block';
-      addRow.style.display='';
     }
   }
 
-  let collapsedTips = true; // default: collapsed (changed per your request)
+  let collapsedTips = true; // default collapsed
   function setCollapsedTips(c){
     collapsedTips = c;
     if(collapsedTips){
@@ -499,12 +494,6 @@
   toggleBtn.addEventListener('click', ()=>{ running ? pause() : start(); saveAll(); });
   resetBtn.addEventListener('click', ()=>{ reset(); saveAll(); });
 
-  presets.addEventListener('click', (e)=>{
-    const chip=e.target.closest('.chip'); if(!chip) return;
-    mins.value = chip.dataset.mins; unit.value = 'min';
-    elapsedMs=0; computeTotal(); draw(); updateShare(); saveAll();
-  });
-
   // Keyboard: Enter in title OR estimate adds the task; 'R' resets timer
   document.addEventListener('keydown', (e)=>{
     if(e.key==='r' || e.key==='R'){ reset(); }
@@ -522,8 +511,8 @@
     loadAll();
     computeTotal(); draw(); updateShare();
     renderTasks();
-    setCollapsedTasks(false); // to-do list open
-    setCollapsedTips(true);  // tips collapsed by default
+    setCollapsedTasks(false);
+    setCollapsedTips(true); // tips collapsed by default
   })();
 })();
 </script>
