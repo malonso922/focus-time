@@ -74,18 +74,14 @@
 
     .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
 
-    /* footer: link | chips | toggle+reset */
+    /* footer: chips center | toggle+reset right (Share link moved to Tips) */
     .footer{
-      display:grid; grid-template-columns:auto 1fr auto; align-items:center;
+      display:grid; grid-template-columns:1fr auto; align-items:center;
       gap:10px; margin-top:12px; color:var(--muted)
     }
-    .link{color:#b9d4ff; text-decoration:none}
-    .link:hover{text-decoration:underline}
-
     .presets{display:flex; gap:8px; flex-wrap:wrap; justify-content:center}
     .chip{border:1px solid rgba(255,255,255,.15); background:#0f0f0f; padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:600}
     .chip:hover{border-color:var(--accent)}
-
     .actions{display:flex; gap:8px; align-items:center; justify-self:end}
 
     /* icon buttons (circle, inverted) */
@@ -113,10 +109,6 @@
     .tasksHeader.collapsed svg{ transform:rotate(-90deg) }
     .tasksHeader .count{ color:var(--muted); font-weight:600; margin-left:auto }
 
-    .addRow{ display:grid; grid-template-columns: 1fr auto auto; gap:8px; margin-top:10px }
-    .addRow input[name="taskTitle"]{ width:100% }
-    .addRow input[name="taskEst"]{ width:110px; text-align:center }
-
     .list{ margin-top:6px; display:grid; gap:6px }
     .item{
       display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center;
@@ -134,7 +126,27 @@
       font-weight:700; color:#d9e8ff;
     }
     .est[contenteditable="true"]{ outline:none; border-color:var(--focus); box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent) }
-    .hint{ color:var(--muted); font-size:12px; margin-top:6px }
+
+    /* Add row (bottom of list) */
+    .addRow{
+      display:grid; grid-template-columns: 1fr auto auto; gap:8px; margin-top:10px; align-items:center;
+    }
+    .addRow input[name="taskTitle"]{ width:100% }
+    .addRow input[name="taskEst"]{ width:110px; text-align:center }
+    /* Plus icon style for Add button */
+    #addBtn.iconbtn{ width:36px; height:36px; padding:0; }
+
+    /* Tips collapsible */
+    .tips{ margin-top:8px; }
+    .tipsHeader{
+      display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none;
+      color:var(--muted); font-size:12px; font-weight:600;
+    }
+    .tipsHeader svg{ width:12px; height:12px; transform:rotate(0deg); transition:transform .2s ease }
+    .tipsHeader.collapsed svg{ transform:rotate(-90deg) }
+    .tipsBody{ color:var(--muted); font-size:12px; margin-top:6px; display:block }
+    .tipsBody .link{ color:#b9d4ff; text-decoration:none }
+    .tipsBody .link:hover{ text-decoration:underline }
   </style>
 </head>
 <body>
@@ -170,10 +182,8 @@
       </div>
     </div>
 
-    <!-- footer: link | chips | toggle+reset -->
+    <!-- footer: chips center | toggle+reset right -->
     <div class="footer">
-      <a class="link" href="#" id="shareLink">Share preset</a>
-
       <div class="presets" id="presets">
         <span class="chip" data-mins="15">15m</span>
         <span class="chip" data-mins="25">25m</span>
@@ -207,14 +217,31 @@
         <span class="count" id="tasksCount">0 open</span>
       </div>
 
-      <div class="addRow" id="addRow">
-        <input name="taskTitle" id="taskTitle" type="text" placeholder="Add a task… (Enter to save)"/>
-        <input name="taskEst" id="taskEst" type="text" placeholder="e.g., 25m or 2h" />
-        <button id="addBtn">Add</button>
+      <div class="list" id="taskList"></div>
+
+      <!-- Tips (collapsible) + Share preset -->
+      <div class="tips">
+        <div class="tipsHeader" id="tipsHeader" title="Toggle tips">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 10l4 4 4-4"/></svg>
+          Tips & Links
+        </div>
+        <div class="tipsBody" id="tipsBody">
+          Tip: click an estimate to set the timer •
+          <a class="link" href="#" id="shareLink">Share preset</a>
+        </div>
       </div>
 
-      <div class="list" id="taskList"></div>
-      <div class="hint">Tip: click an estimate to set the timer • <strong>Shift+Click</strong> an estimate to edit it.</div>
+      <!-- Add row at bottom with + icon -->
+      <div class="addRow" id="addRow">
+        <input name="taskTitle" id="taskTitle" type="text" placeholder="Add a task…"/>
+        <input name="taskEst" id="taskEst" type="text" placeholder="e.g., 25m or 2h" />
+        <button id="addBtn" class="iconbtn" title="Add task" aria-label="Add task">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle class="ring" cx="12" cy="12" r="10" />
+            <path class="shape" d="M12 7v10M7 12h10"/>
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -240,6 +267,7 @@
   const tasks=$('tasks'), tasksHeader=$('tasksHeader'), tasksCount=$('tasksCount');
   const addRow=$('addRow'), addBtn=$('addBtn'), taskTitle=$('taskTitle'), taskEst=$('taskEst');
   const taskList=$('taskList');
+  const tipsHeader=$('tipsHeader'), tipsBody=$('tipsBody');
 
   let totalMs=0, startAt=0, elapsedMs=0, timer=null, running=false;
 
@@ -326,10 +354,7 @@
   function uid(){ return Math.random().toString(36).slice(2,9); }
 
   function saveAll(){
-    const data={
-      timer:{label:label.value, mins:mins.value, unit:unit.value},
-      todos
-    };
+    const data={ timer:{label:label.value, mins:mins.value, unit:unit.value}, todos };
     try{ localStorage.setItem('focus-timer-v2', JSON.stringify(data)); }catch(e){}
   }
   function loadAll(){
@@ -346,13 +371,12 @@
     }catch(e){}
   }
 
-  /* Estimate parsing: accepts "15m", "2h", "1h30m", "90m", "1.5h" */
+  /* Estimate parsing: "15m", "2h", "1h30m", "90m", "1.5h" */
   function parseEstimate(text){
     if(!text) return null;
     const s = String(text).trim().toLowerCase().replace(/\s+/g,'');
     if(!s) return null;
     let h=0, m=0;
-    // 1h30m or 2h or 45m
     const m1 = s.match(/^(?:(\d+(?:\.\d+)?)h)?(?:(\d+)m)?$/);
     if(m1){
       if(m1[1]) h = parseFloat(m1[1]);
@@ -360,7 +384,6 @@
       const totalMin = Math.round(h*60 + m);
       return {mins: totalMin, unit:'min', pretty: prettyEstimate(totalMin)};
     }
-    // pure minutes like "90"
     if(/^\d+$/.test(s)){
       const totalMin = parseInt(s,10);
       return {mins: totalMin, unit:'min', pretty: prettyEstimate(totalMin)};
@@ -368,15 +391,8 @@
     return null;
   }
   function prettyEstimate(totalMin){
-    if(totalMin % 60 === 0){
-      const hrs = totalMin/60;
-      return `${hrs}h`;
-    }
-    if(totalMin > 60){
-      const hrs = Math.floor(totalMin/60);
-      const mins = totalMin % 60;
-      return `${hrs}h${mins}m`;
-    }
+    if(totalMin % 60 === 0){ return `${totalMin/60}h`; }
+    if(totalMin > 60){ const hrs = Math.floor(totalMin/60); const mins = totalMin % 60; return `${hrs}h${mins}m`; }
     return `${totalMin}m`;
   }
 
@@ -386,72 +402,47 @@
     let open = 0;
     todos.forEach(t => {
       if(!t.done) open++;
-      const row = document.createElement('div');
-      row.className = 'item';
+      const row = document.createElement('div'); row.className = 'item';
 
       const check = document.createElement('div');
       check.className = 'check' + (t.done ? ' done':'');
       check.title = t.done ? 'Mark as not done' : 'Mark as done';
-      check.addEventListener('click', ()=>{
-        t.done = !t.done;
-        saveAll(); renderTasks();
-      });
-
+      check.addEventListener('click', ()=>{ t.done = !t.done; saveAll(); renderTasks(); });
       const dot = document.createElement('div');
-      dot.style.width='8px'; dot.style.height='8px'; dot.style.borderRadius='50%'; dot.style.background='currentColor';
-      dot.style.opacity='0.9';
+      dot.style.width='8px'; dot.style.height='8px'; dot.style.borderRadius='50%'; dot.style.background='currentColor'; dot.style.opacity='0.9';
       check.appendChild(dot);
 
       const title = document.createElement('div');
       title.className = 'title' + (t.done ? ' done' : '');
       title.textContent = t.title;
       title.title = 'Click to set as current task';
-      title.addEventListener('click', ()=>{
-        label.value = t.title;
-        saveAll();
-      });
+      title.addEventListener('click', ()=>{ label.value = t.title; saveAll(); });
 
       const est = document.createElement('span');
-      est.className = 'est';
-      est.textContent = t.estimate || '';
+      est.className = 'est'; est.textContent = t.estimate || '';
       est.title = 'Click to set timer • Shift+Click to edit';
       est.addEventListener('click', (e)=>{
         if(e.shiftKey){
-          // enter edit mode
-          est.setAttribute('contenteditable', 'true');
-          est.focus();
+          est.setAttribute('contenteditable', 'true'); est.focus();
           const sel = window.getSelection(); const r = document.createRange();
           r.selectNodeContents(est); sel.removeAllRanges(); sel.addRange(r);
           return;
         }
-        // apply estimate to timer
-        const parsed = parseEstimate(est.textContent);
-        if(!parsed) return;
-        mins.value = parsed.mins;
-        unit.value = 'min';
+        const parsed = parseEstimate(est.textContent); if(!parsed) return;
+        mins.value = parsed.mins; unit.value = 'min';
         label.value = t.title || label.value;
         elapsedMs = 0; computeTotal(); draw(); updateShare(); saveAll();
       });
-      est.addEventListener('keydown', (e)=>{
-        if(e.key==='Enter'){ e.preventDefault(); est.blur(); }
-      });
+      est.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); est.blur(); } });
       est.addEventListener('blur', ()=>{
         if(est.getAttribute('contenteditable')!=='true') return;
         est.removeAttribute('contenteditable');
         const parsed = parseEstimate(est.textContent);
-        if(parsed){
-          t.estimate = parsed.pretty;
-          est.textContent = t.estimate;
-        }else{
-          // revert if invalid
-          est.textContent = t.estimate || '';
-        }
+        est.textContent = parsed ? (t.estimate = parsed.pretty) : (t.estimate || '');
         saveAll();
       });
 
-      row.appendChild(check);
-      row.appendChild(title);
-      row.appendChild(est);
+      row.appendChild(check); row.appendChild(title); row.appendChild(est);
       taskList.appendChild(row);
     });
     tasksCount.textContent = `${open} open`;
@@ -462,29 +453,40 @@
     const estRaw = taskEst.value.trim();
     if(!title) return;
     let pretty = '';
-    if(estRaw){
-      const parsed = parseEstimate(estRaw);
-      if(parsed) pretty = parsed.pretty;
-    }
+    if(estRaw){ const parsed = parseEstimate(estRaw); if(parsed) pretty = parsed.pretty; }
     todos.unshift({ id: uid(), title, estimate: pretty, done:false });
     taskTitle.value=''; taskEst.value='';
     saveAll(); renderTasks();
   }
 
-  /* Collapsible behavior */
-  let collapsed = false;
-  function setCollapsed(c){
-    collapsed = c;
-    if(collapsed){
+  /* Collapsibles */
+  let collapsedTasks = false;
+  function setCollapsedTasks(c){
+    collapsedTasks = c;
+    if(collapsedTasks){
       tasksHeader.classList.add('collapsed');
-      addRow.style.display='none';
       taskList.style.display='none';
-      tasks.querySelector('.hint').style.display='none';
+      tipsHeader.style.display='none';
+      tipsBody.style.display='none';
+      addRow.style.display='none';
     }else{
       tasksHeader.classList.remove('collapsed');
-      addRow.style.display='';
       taskList.style.display='';
-      tasks.querySelector('.hint').style.display='';
+      tipsHeader.style.display='';
+      tipsBody.style.display= collapsedTips ? 'none' : 'block';
+      addRow.style.display='';
+    }
+  }
+
+  let collapsedTips = true; // default: collapsed (changed per your request)
+  function setCollapsedTips(c){
+    collapsedTips = c;
+    if(collapsedTips){
+      tipsHeader.classList.add('collapsed');
+      tipsBody.style.display='none';
+    }else{
+      tipsHeader.classList.remove('collapsed');
+      tipsBody.style.display='block';
     }
   }
 
@@ -498,28 +500,30 @@
   resetBtn.addEventListener('click', ()=>{ reset(); saveAll(); });
 
   presets.addEventListener('click', (e)=>{
-    const chip=e.target.closest('.chip');
-    if(!chip) return;
-    mins.value = chip.dataset.mins;
-    unit.value = 'min';
+    const chip=e.target.closest('.chip'); if(!chip) return;
+    mins.value = chip.dataset.mins; unit.value = 'min';
     elapsedMs=0; computeTotal(); draw(); updateShare(); saveAll();
   });
 
-  // Remove spacebar hotkey; keep 'R' for reset only
+  // Keyboard: Enter in title OR estimate adds the task; 'R' resets timer
   document.addEventListener('keydown', (e)=>{
     if(e.key==='r' || e.key==='R'){ reset(); }
-    if(e.key==='Enter' && document.activeElement===taskTitle){ addTask(); }
+    if(e.key==='Enter' && (document.activeElement===taskTitle || document.activeElement===taskEst)){
+      e.preventDefault(); addTask();
+    }
   });
 
   addBtn.addEventListener('click', addTask);
-  tasksHeader.addEventListener('click', ()=> setCollapsed(!collapsed));
+  tasksHeader.addEventListener('click', ()=> setCollapsedTasks(!collapsedTasks));
+  tipsHeader.addEventListener('click', ()=> setCollapsedTips(!collapsedTips));
 
   /* ---------- Init ---------- */
   (function init(){
     loadAll();
     computeTotal(); draw(); updateShare();
     renderTasks();
-    setCollapsed(false);
+    setCollapsedTasks(false); // to-do list open
+    setCollapsedTips(true);  // tips collapsed by default
   })();
 })();
 </script>
