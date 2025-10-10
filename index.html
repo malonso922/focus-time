@@ -12,12 +12,12 @@
     :root{
       --bg:#111111;         /* ClickUp dark */
       --panel:#161616;      /* card bg */
-      --accent:#4da3ff;     /* legacy single color (kept as a token) */
+      --accent:#4da3ff;
       --accent-2:#49d47a;
 
       /* gradient stops for the progress fill (updated live by JS) */
-      --bar-start:#5aa8ff;
-      --bar-end:#2e7ddd;
+      --bar-start:#2e7ddd;  /* darker left */
+      --bar-end:#5aa8ff;    /* lighter right */
 
       --focus:#a970ff;      /* focus ring */
       --text:#eef3ff;
@@ -56,7 +56,7 @@
     .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden}
     .fill{
       height:100%; width:0%;
-      background: linear-gradient(90deg,var(--bar-start),var(--bar-end));
+      background: linear-gradient(90deg,var(--bar-start),var(--bar-end)); /* dark -> light */
       transition:width .3s ease, background .3s ease, opacity .25s ease;
     }
     .barRow{
@@ -204,23 +204,18 @@
     shareLink.href = `${location.origin}${location.pathname}?${params.toString()}`;
   }
 
+  // gradient controller: dark -> light; no color change at 100%
   function setGradient(p){
-    // p = 0..100
-    if(p >= 100){
-      // done: subtle neutral
-      fill.style.setProperty('--bar-start', '#7a8291');
-      fill.style.setProperty('--bar-end', '#646b7a');
-      return;
-    }
     if(p < 67){
-      // early/mid: blue gradient
-      fill.style.setProperty('--bar-start', '#5aa8ff'); // lighter
-      fill.style.setProperty('--bar-end',   '#2e7ddd'); // darker
+      // early/mid: blue (dark->light)
+      fill.style.setProperty('--bar-start', '#2e7ddd'); // darker
+      fill.style.setProperty('--bar-end',   '#5aa8ff'); // lighter
     }else{
-      // late: green gradient
-      fill.style.setProperty('--bar-start', '#6be28f');
-      fill.style.setProperty('--bar-end',   '#3dbd6d');
+      // late: green (dark->light)
+      fill.style.setProperty('--bar-start', '#3dbd6d'); // darker
+      fill.style.setProperty('--bar-end',   '#6be28f'); // lighter
     }
+    // note: intentionally NO special case for p >= 100 (keeps last color)
   }
 
   function draw(){
