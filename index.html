@@ -28,17 +28,22 @@
       padding:12px 16px 18px;
     }
 
-    /* --- Top bar: banner left, controls right --- */
+    /* --- Top bar: banner + % on left, controls right --- */
     .topbar{
       display:flex; align-items:center; justify-content:space-between;
       gap:8px; margin-bottom:8px;
     }
+    .leftTop{ display:flex; align-items:center; gap:10px; min-width:0; }
     .banner{
       font-size:16px; font-weight:800; color:#e6eeff;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
       max-width:60%;
     }
     .banner.hidden{visibility:hidden} /* keep row height stable */
+    .pctTop{
+      font-size:16px; font-weight:800; color:#cfe0ff;
+      white-space:nowrap;
+    }
 
     .actions{ display:flex; align-items:center; gap:8px }
     .iconbtn{
@@ -50,9 +55,10 @@
     .iconbtn .ring{ fill:none; stroke:currentColor; stroke-width:2 }
     .iconbtn .shape{ fill:currentColor }
 
-    /* Task name + Duration inline and tight */
-    .grid-inline{ display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:6px; }
+    /* Task name + Duration inline; duration scooted left (tight gap) */
+    .grid-inline{ display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; margin-bottom:6px; }
     .field{ min-width:220px; flex:1 1 auto }
+    #durationField{ flex:0 0 auto } /* don't push it away */
     .field label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px}
     input,select{
       border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:#eef3ff; padding:10px 12px; outline:none;
@@ -65,15 +71,15 @@
     .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden}
     .fill{ height:100%; width:0%; background: linear-gradient(90deg,var(--bar-start),var(--bar-end)); transition:width .3s ease, background .3s ease, opacity .25s ease; }
     .barRow{ display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center; }
+
     .clockRight{ text-align:right; font-size:28px; font-weight:700; letter-spacing:.5px; font-variant-numeric: tabular-nums; }
-    .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
 
     /* ---------- Tasks ---------- */
     .tasks{ margin-top:12px; border-top:1px dashed rgba(255,255,255,.07); padding-top:12px; }
     .tasksHeader{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; color:#dbe6ff; font-weight:800; letter-spacing:.2px; }
     .tasksHeader svg{ width:16px; height:16px; transform:rotate(0deg); transition:transform .2s ease }
     .tasksHeader.collapsed svg{ transform:rotate(-90deg) }
-    .tasksHeader .count{ color:var(--muted); font-weight:600; margin-left:auto }
+    .tasksHeader .count{ color:#9fb0cf; font-weight:600; margin-left:auto }
     .list{ margin-top:6px; display:grid; gap:6px }
     .item{
       display:grid; grid-template-columns:auto 1fr auto auto; gap:8px; align-items:center;
@@ -84,7 +90,7 @@
       display:grid; place-items:center; cursor:pointer; transition:border-color .15s ease, background .15s ease;
     }
     .check.done{ background:var(--accent-2); border-color:var(--accent-2) }
-    .title{ font-weight:600; color:#e9f2ff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+    .title{ font-weight:600; color:#e9f2ff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer }
     .title.done{ text-decoration:line-through; color:#8fa0bf }
     .est{
       border:1px solid rgba(255,255,255,.15); padding:4px 10px; border-radius:999px; cursor:pointer; background:#0f0f0f; min-width:48px; text-align:center;
@@ -119,9 +125,12 @@
 <body>
   <div class="card" id="app">
 
-    <!-- Top bar: banner left | controls right -->
+    <!-- Top bar: banner+% left | controls right -->
     <div class="topbar">
-      <div class="banner hidden" id="banner"></div>
+      <div class="leftTop">
+        <div class="banner hidden" id="banner"></div>
+        <div class="pctTop" id="pctTop">0%</div>
+      </div>
       <div class="actions">
         <button class="iconbtn" id="toggleBtn" title="Start" aria-label="Start">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -138,7 +147,7 @@
       </div>
     </div>
 
-    <!-- Task + Duration inline -->
+    <!-- Task + Duration inline (tight) -->
     <div class="grid-inline">
       <div class="field" id="taskField">
         <label>Task name</label>
@@ -161,10 +170,6 @@
       <div class="barRow">
         <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
         <div class="clockRight" id="clock">25:00</div>
-      </div>
-      <div class="meta">
-        <div><span id="pct">0%</span> complete</div>
-        <div>Elapsed: <span id="elapsed">0:00</span></div>
       </div>
     </div>
 
@@ -209,7 +214,7 @@
   const label=$('label'), mins=$('mins'), unit=$('unit');
   const clock=$('clock');
   const toggleBtn=$('toggleBtn'), resetBtn=$('resetBtn');
-  const bar=$('bar'), fill=$('fill'), pct=$('pct'), elapsed=$('elapsed');
+  const bar=$('bar'), fill=$('fill'), pctTop=$('pctTop');
   const ding=$('ding');
   const shareLink=$('shareLink');
   const banner=$('banner');
@@ -244,13 +249,12 @@
     else      { fill.style.setProperty('--bar-start','#3dbd6d'); fill.style.setProperty('--bar-end','#6be28f'); }
   }
   function draw(){
-    const done=Math.max(0,Math.min(elapsedMs,totalMs));
+    const done=clamp(elapsedMs,0,totalMs);
     const p = Math.round( (done/totalMs)*100 );
     setGradient(p);
     fill.style.width = p + '%';
-    pct.textContent = p + '%';
+    pctTop.textContent = p + '%';
     clock.textContent = fmt(totalMs - done);
-    elapsed.textContent = fmt(done);
   }
   function setState(newRunning){
     running=newRunning;
@@ -275,7 +279,7 @@
     setState(true);
     // show banner text inline on the left
     banner.textContent = label.value || 'Untitled Task';
-    banner.classList.remove('hidden'); // visibility: visible
+    banner.classList.remove('hidden');
     // hide inputs row
     taskField.classList.add('hidden');
     durationField.classList.add('hidden');
@@ -286,8 +290,7 @@
   function reset(){
     cancelAnimationFrame(timer); elapsedMs=0; setState(false); draw();
     // hide banner text but keep topbar layout height
-    banner.classList.add('hidden'); // visibility: hidden via CSS
-    banner.textContent = '';
+    banner.classList.add('hidden'); banner.textContent = '';
     taskField.classList.remove('hidden');
     durationField.classList.remove('hidden');
   }
@@ -334,6 +337,7 @@
   function renderTasks(){
     taskList.innerHTML = '';
     let open = 0;
+    // Render in insertion order (chronological)
     todos.forEach(t => {
       if(!t.done) open++;
       const row = document.createElement('div'); row.className = 'item';
@@ -349,8 +353,17 @@
       const title = document.createElement('div');
       title.className = 'title' + (t.done ? ' done' : '');
       title.textContent = t.title;
-      title.title = 'Click to set as current task';
-      title.addEventListener('click', ()=>{ label.value = t.title; saveAll(); });
+      title.title = 'Click to set timer from this task';
+      title.addEventListener('click', ()=>{
+        label.value = t.title;
+        // if estimate exists, apply it too
+        if(t.estimate){
+          const parsed = parseEstimate(t.estimate);
+          if(parsed){ mins.value = parsed.mins; unit.value = 'min'; }
+        }
+        // refresh total and UI
+        elapsedMs = 0; computeTotal(); draw(); updateShare(); saveAll();
+      });
 
       const est = document.createElement('span');
       est.className = 'est'; est.textContent = t.estimate || '';
@@ -395,9 +408,12 @@
     if(!title) return;
     let pretty = '';
     if(estRaw){ const parsed = parseEstimate(estRaw); if(parsed) pretty = parsed.pretty; }
-    todos.unshift({ id: uid(), title, estimate: pretty, done:false });
+    // chronological: push to end (first stays on top)
+    todos.push({ id: uid(), title, estimate: pretty, done:false });
     taskTitle.value=''; taskEst.value='';
     saveAll(); renderTasks();
+    // focus back to title for rapid entry
+    taskTitle.focus();
   }
 
   /* Collapsibles */
@@ -434,11 +450,12 @@
   toggleBtn.addEventListener('click', ()=>{ running ? pause() : start(); saveAll(); });
   resetBtn.addEventListener('click', ()=>{ reset(); saveAll(); });
 
+  // Keyboard: Enter adds task (from either field), then refocus title
   document.addEventListener('keydown', (e)=>{
-    if(e.key==='r' || e.key==='R'){ reset(); }
     if(e.key==='Enter' && (document.activeElement===taskTitle || document.activeElement===taskEst)){
       e.preventDefault(); addTask();
     }
+    if(e.key==='r' || e.key==='R'){ reset(); }
   });
 
   addBtn.addEventListener('click', addTask);
