@@ -3,33 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Inter to match ClickUp -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <title>Focus Timer • Countdown + Progress + Tasks</title>
   <style>
     :root{
-      --bg:#111111;         /* ClickUp dark */
-      --panel:#161616;      /* card bg */
-      --accent:#4da3ff;
-      --accent-2:#49d47a;
-
-      /* progress gradient (dark -> light) */
-      --bar-start:#2e7ddd;
-      --bar-end:#5aa8ff;
-
-      --focus:#a970ff;      /* focus ring */
-      --text:#eef3ff;
-      --muted:#a7b2cc;
-      --danger:#ff5a5a;
+      --bg:#111111; --panel:#161616;
+      --accent:#4da3ff; --accent-2:#49d47a;
+      --bar-start:#2e7ddd; --bar-end:#5aa8ff; /* progress gradient (dark -> light) */
+      --focus:#a970ff; --text:#eef3ff; --muted:#a7b2cc; --danger:#ff5a5a;
       --radius:16px;
     }
     *,*::before,*::after{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; background:var(--bg);
-      color:var(--text); font:14px/1.4 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+      margin:0; background:var(--bg); color:var(--text);
+      font:14px/1.4 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
       display:grid; place-items:center; padding:16px;
     }
     .card{
@@ -38,9 +28,9 @@
       padding:12px 16px 18px;
     }
 
-    /* --- Top bar actions (moved to top-left) --- */
+    /* --- Top bar actions (RIGHT aligned now) --- */
     .topbar{
-      display:flex; align-items:center; gap:8px; margin-bottom:8px;
+      display:flex; align-items:center; gap:8px; margin-bottom:8px; justify-content:flex-end;
     }
     .iconbtn{
       width:36px; height:36px; display:grid; place-items:center; border-radius:999px;
@@ -52,48 +42,32 @@
     .iconbtn .shape{ fill:currentColor }
 
     /* Task name + Duration inline and tight */
-    .grid-inline{
-      display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:6px;
-    }
+    .grid-inline{ display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:6px; }
     .field{ min-width:220px; flex:1 1 auto }
     .field label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px}
     input,select{
       border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:#eef3ff; padding:10px 12px; outline:none;
       transition:border-color .15s ease, box-shadow .15s ease;
     }
-    input:focus,select:focus{
-      border-color:var(--focus);
-      box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent);
-    }
+    input:focus,select:focus{ border-color:var(--focus); box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent); }
     #durationField .row{display:flex; gap:8px; align-items:center}
 
-    /* Banner now left-aligned (not centered) */
+    /* Left-aligned banner while running */
     .banner{margin:0 0 6px; font-size:16px; font-weight:800; text-align:left; color:#e6eeff}
 
     /* progress + dynamic clock on right */
     .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden}
-    .fill{
-      height:100%; width:0%;
-      background: linear-gradient(90deg,var(--bar-start),var(--bar-end));
-      transition:width .3s ease, background .3s ease, opacity .25s ease;
-    }
-    .barRow{
-      display:grid;
-      grid-template-columns: 1fr auto; gap:10px; align-items:center;
-    }
+    .fill{ height:100%; width:0%; background: linear-gradient(90deg,var(--bar-start),var(--bar-end)); transition:width .3s ease, background .3s ease, opacity .25s ease; }
+    .barRow{ display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center; }
     .clockRight{ text-align:right; font-size:28px; font-weight:700; letter-spacing:.5px; font-variant-numeric: tabular-nums; }
     .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
 
     /* ---------- Tasks ---------- */
     .tasks{ margin-top:12px; border-top:1px dashed rgba(255,255,255,.07); padding-top:12px; }
-    .tasksHeader{
-      display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none;
-      color:#dbe6ff; font-weight:800; letter-spacing:.2px;
-    }
+    .tasksHeader{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; color:#dbe6ff; font-weight:800; letter-spacing:.2px; }
     .tasksHeader svg{ width:16px; height:16px; transform:rotate(0deg); transition:transform .2s ease }
     .tasksHeader.collapsed svg{ transform:rotate(-90deg) }
     .tasksHeader .count{ color:var(--muted); font-weight:600; margin-left:auto }
-
     .list{ margin-top:6px; display:grid; gap:6px }
     .item{
       display:grid; grid-template-columns:auto 1fr auto auto; gap:8px; align-items:center;
@@ -113,9 +87,7 @@
     .est[contenteditable="true"]{ outline:none; border-color:var(--focus); box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent) }
 
     /* Trash can (hidden until hover) */
-    .trash{
-      display:grid; place-items:center; width:30px; height:30px; color:transparent; cursor:pointer; border:none; background:transparent;
-    }
+    .trash{ display:grid; place-items:center; width:30px; height:30px; color:transparent; cursor:pointer; border:none; background:transparent; }
     .item:hover .trash{ color:var(--danger); }
     .trash svg{ width:18px; height:18px; }
 
@@ -123,18 +95,12 @@
     .addRow{ display:grid; grid-template-columns: 1fr auto auto; gap:8px; margin-top:10px; align-items:center }
     .addRow input[name="taskTitle"]{ width:100% }
     .addRow input[name="taskEst"]{ width:110px; text-align:center }
-    #addBtn{
-      background:transparent; border:none; color:#fff; cursor:pointer;
-      font-size:22px; line-height:1; width:36px; height:36px; display:grid; place-items:center;
-    }
+    #addBtn{ background:transparent; border:none; color:#fff; cursor:pointer; font-size:22px; line-height:1; width:36px; height:36px; display:grid; place-items:center; }
     #addBtn:hover{ color:var(--accent); }
 
-    /* Tips collapsible now BELOW add row */
+    /* Tips collapsible (below add row) */
     .tips{ margin-top:8px; }
-    .tipsHeader{
-      display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none;
-      color:var(--muted); font-size:12px; font-weight:600;
-    }
+    .tipsHeader{ display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; color:var(--muted); font-size:12px; font-weight:600; }
     .tipsHeader svg{ width:12px; height:12px; transform:rotate(0deg); transition:transform .2s ease }
     .tipsHeader.collapsed svg{ transform:rotate(-90deg) }
     .tipsBody{ color:var(--muted); font-size:12px; margin-top:6px; display:block }
@@ -147,12 +113,12 @@
 <body>
   <div class="card" id="app">
 
-    <!-- Top-left controls -->
+    <!-- Top-right controls -->
     <div class="topbar">
       <button class="iconbtn" id="toggleBtn" title="Start" aria-label="Start">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <circle class="ring" cx="12" cy="12" r="10" />
-          <path class="shape" d="M10 8v8l6-4z"/> <!-- play -->
+          <path class="shape" d="M10 8v8l6-4z"/>
         </svg>
       </button>
       <button class="iconbtn" id="resetBtn" title="Reset" aria-label="Reset" disabled>
@@ -213,7 +179,7 @@
         <button id="addBtn" title="Add task" aria-label="Add task">+</button>
       </div>
 
-      <!-- Tips (now below add row) + Share preset -->
+      <!-- Tips (below add row) + Share preset -->
       <div class="tips">
         <div class="tipsHeader" id="tipsHeader" title="Toggle tips">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 10l4 4 4-4"/></svg>
@@ -252,7 +218,6 @@
 
   let totalMs=0, startAt=0, elapsedMs=0, timer=null, running=false;
 
-  /* ---------- Timer Helpers ---------- */
   const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
   function fmt(ms){
     ms=Math.max(0,Math.floor(ms/1000));
@@ -273,7 +238,7 @@
     else      { fill.style.setProperty('--bar-start','#3dbd6d'); fill.style.setProperty('--bar-end','#6be28f'); }
   }
   function draw(){
-    const done=clamp(elapsedMs,0,totalMs);
+    const done=Math.max(0,Math.min(elapsedMs,totalMs));
     const p = Math.round( (done/totalMs)*100 );
     setGradient(p);
     fill.style.width = p + '%';
@@ -286,7 +251,6 @@
     toggleBtn.title = running ? 'Pause' : 'Start';
     toggleBtn.setAttribute('aria-label', toggleBtn.title);
     resetBtn.disabled = !running && elapsedMs===0;
-    // play <-> pause glyph
     toggleBtn.innerHTML = running
       ? `<svg viewBox="0 0 24 24" aria-hidden="true">
            <circle class="ring" cx="12" cy="12" r="10" />
@@ -303,7 +267,6 @@
     if(elapsedMs>=totalMs){ elapsedMs=0; }
     if(!running){ startAt=Date.now()-elapsedMs; timer=requestAnimationFrame(tick); }
     setState(true);
-    // left-aligned banner + hide inputs
     banner.textContent = label.value || 'Untitled Task';
     banner.classList.remove('hidden');
     taskField.classList.add('hidden');
@@ -331,44 +294,24 @@
 
   /* ---------- Tasks: data + persistence ---------- */
   let todos = []; // {id, title, estimate, done}
-
   function uid(){ return Math.random().toString(36).slice(2,9); }
-
-  function saveAll(){
-    const data={ timer:{label:label.value, mins:mins.value, unit:unit.value}, todos };
-    try{ localStorage.setItem('focus-timer-v2', JSON.stringify(data)); }catch(e){}
-  }
+  function saveAll(){ const data={ timer:{label:label.value, mins:mins.value, unit:unit.value}, todos }; try{ localStorage.setItem('focus-timer-v2', JSON.stringify(data)); }catch(e){} }
   function loadAll(){
     try{
-      const raw = localStorage.getItem('focus-timer-v2');
-      if(!raw) return;
+      const raw = localStorage.getItem('focus-timer-v2'); if(!raw) return;
       const data = JSON.parse(raw);
-      if(data.timer){
-        if(data.timer.label!=null) label.value=data.timer.label;
-        if(data.timer.mins!=null) mins.value=data.timer.mins;
-        if(data.timer.unit!=null) unit.value=data.timer.unit;
-      }
+      if(data.timer){ if(data.timer.label!=null) label.value=data.timer.label; if(data.timer.mins!=null) mins.value=data.timer.mins; if(data.timer.unit!=null) unit.value=data.timer.unit; }
       if(Array.isArray(data.todos)) todos = data.todos;
     }catch(e){}
   }
 
-  /* Estimate parsing: "15m", "2h", "1h30m", "90m", "1.5h" */
+  /* Estimate parsing */
   function parseEstimate(text){
     if(!text) return null;
-    const s = String(text).trim().toLowerCase().replace(/\s+/g,'');
-    if(!s) return null;
-    let h=0, m=0;
-    const m1 = s.match(/^(?:(\d+(?:\.\d+)?)h)?(?:(\d+)m)?$/);
-    if(m1){
-      if(m1[1]) h = parseFloat(m1[1]);
-      if(m1[2]) m = parseInt(m1[2],10)||0;
-      const totalMin = Math.round(h*60 + m);
-      return {mins: totalMin, unit:'min', pretty: prettyEstimate(totalMin)};
-    }
-    if(/^\d+$/.test(s)){
-      const totalMin = parseInt(s,10);
-      return {mins: totalMin, unit:'min', pretty: prettyEstimate(totalMin)};
-    }
+    const s = String(text).trim().toLowerCase().replace(/\s+/g,''); if(!s) return null;
+    let h=0, m=0; const m1 = s.match(/^(?:(\d+(?:\.\d+)?)h)?(?:(\d+)m)?$/);
+    if(m1){ if(m1[1]) h = parseFloat(m1[1]); if(m1[2]) m = parseInt(m1[2],10)||0; const totalMin = Math.round(h*60 + m); return {mins: totalMin, unit:'min', pretty: prettyEstimate(totalMin)}; }
+    if(/^\d+$/.test(s)){ const totalMin = parseInt(s,10); return {mins: totalMin, unit:'min', pretty: prettyEstimate(totalMin)}; }
     return null;
   }
   function prettyEstimate(totalMin){
@@ -424,20 +367,13 @@
       });
 
       const trash = document.createElement('button');
-      trash.className = 'trash';
-      trash.title = 'Delete task';
+      trash.className = 'trash'; trash.title = 'Delete task';
       trash.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">
         <path class="shape" fill="currentColor" d="M9 3h6l1 2h4v2h-1l-1 12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 7H4V5h4l1-2zm1.5 6v9h2V9h-2z"/>
       </svg>`;
-      trash.addEventListener('click', ()=>{
-        todos = todos.filter(x=>x!==t);
-        saveAll(); renderTasks();
-      });
+      trash.addEventListener('click', ()=>{ todos = todos.filter(x=>x!==t); saveAll(); renderTasks(); });
 
-      row.appendChild(check);
-      row.appendChild(title);
-      row.appendChild(est);
-      row.appendChild(trash);
+      row.appendChild(check); row.appendChild(title); row.appendChild(est); row.appendChild(trash);
       taskList.appendChild(row);
     });
     tasksCount.textContent = `${open} open`;
@@ -473,28 +409,21 @@
     }
   }
 
-  let collapsedTips = true; // default collapsed
+  let collapsedTips = true; // tips collapsed by default
   function setCollapsedTips(c){
     collapsedTips = c;
-    if(collapsedTips){
-      tipsHeader.classList.add('collapsed');
-      tipsBody.style.display='none';
-    }else{
-      tipsHeader.classList.remove('collapsed');
-      tipsBody.style.display='block';
-    }
+    if(collapsedTips){ tipsHeader.classList.add('collapsed'); tipsBody.style.display='none'; }
+    else{ tipsHeader.classList.remove('collapsed'); tipsBody.style.display='block'; }
   }
 
-  /* ---------- Events ---------- */
+  /* Events */
   [label, mins, unit].forEach(el=>{
     el.addEventListener('input',()=>{ updateShare(); saveAll(); computeTotal(); draw(); });
     el.addEventListener('change',()=>{ updateShare(); saveAll(); computeTotal(); draw(); });
   });
-
   toggleBtn.addEventListener('click', ()=>{ running ? pause() : start(); saveAll(); });
   resetBtn.addEventListener('click', ()=>{ reset(); saveAll(); });
 
-  // Keyboard: Enter in title OR estimate adds the task; 'R' resets timer
   document.addEventListener('keydown', (e)=>{
     if(e.key==='r' || e.key==='R'){ reset(); }
     if(e.key==='Enter' && (document.activeElement===taskTitle || document.activeElement===taskEst)){
@@ -506,13 +435,14 @@
   tasksHeader.addEventListener('click', ()=> setCollapsedTasks(!collapsedTasks));
   tipsHeader.addEventListener('click', ()=> setCollapsedTips(!collapsedTips));
 
-  /* ---------- Init ---------- */
+  /* Init */
   (function init(){
+    try{ if('Notification' in window && Notification.permission==='default'){ Notification.requestPermission().catch(()=>{}); } }catch(e){}
     loadAll();
     computeTotal(); draw(); updateShare();
     renderTasks();
     setCollapsedTasks(false);
-    setCollapsedTips(true); // tips collapsed by default
+    setCollapsedTips(true);
   })();
 })();
 </script>
