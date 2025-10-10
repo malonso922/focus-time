@@ -28,29 +28,50 @@
       padding:12px 16px 18px;
     }
 
-    /* --- Top bar: banner + % on left, controls right --- */
+    /* --- Top bar ----------------------------------------------------------- */
     .topbar{
       display:flex; align-items:center; justify-content:space-between;
-      gap:8px; margin-bottom:8px;
+      gap:12px; margin-bottom:8px;
     }
-    .leftTop{
-      position:relative; display:flex; align-items:center; gap:10px;
-      min-width:0; flex:1 1 auto;
+
+    /* Left side has two modes: pre-start form vs running banner */
+    .leftTop{ min-width:0; flex:1 1 auto; }
+    .hidden{ display:none !important; }
+
+    /* Pre-start row (Task + Duration inline) */
+    .preRow{
+      display:flex; align-items:flex-end; gap:8px; min-width:0;
+    }
+    .field label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px}
+    .field input, .field select{
+      border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:#eef3ff; padding:10px 12px; outline:none;
+      transition:border-color .15s ease, box-shadow .15s ease;
+    }
+    .field input:focus, .field select:focus{
+      border-color:var(--focus);
+      box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent);
+    }
+    .taskField{ flex:1 1 auto; min-width:200px }
+    .durationField{ display:flex; gap:8px; align-items:center }
+    .durationField input{ width:110px }
+
+    /* Running row (banner + % next to it) */
+    .runRow{
+      position:relative; display:flex; align-items:center; gap:10px; min-width:0;
     }
     .banner{
       font-size:16px; font-weight:800; color:#e6eeff;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      /* Reserve space for the % chip that is absolutely positioned on the right */
-      padding-right:80px; /* wide enough for "100%" comfortably */
+      padding-right:80px; /* reserve for % */
       flex:1 1 auto; min-width:0;
     }
-    .banner.hidden{visibility:hidden} /* keep row height stable */
     .pctTop{
       position:absolute; right:0; top:50%; transform:translateY(-50%);
       font-size:16px; font-weight:800; white-space:nowrap;
       color:#cfe0ff; transition: color .25s ease;
     }
 
+    /* Right side actions */
     .actions{ display:flex; align-items:center; gap:8px }
     .iconbtn{
       width:36px; height:36px; display:grid; place-items:center; border-radius:999px;
@@ -61,25 +82,13 @@
     .iconbtn .ring{ fill:none; stroke:currentColor; stroke-width:2 }
     .iconbtn .shape{ fill:currentColor }
 
-    /* Task name + Duration inline; duration scooted left (tight gap) */
-    .grid-inline{ display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; margin-bottom:6px; }
-    .field{ min-width:220px; flex:1 1 auto }
-    #durationField{ flex:0 0 auto } /* keep it tight to the name */
-    .field label{display:block; font-size:12px; color:#a7b2cc; margin-bottom:4px}
-    input,select{
-      border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:#eef3ff; padding:10px 12px; outline:none;
-      transition:border-color .15s ease, box-shadow .15s ease;
-    }
-    input:focus,select:focus{ border-color:var(--focus); box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent); }
-    #durationField .row{display:flex; gap:8px; align-items:center}
-
-    /* progress + dynamic clock on right */
+    /* Progress + clock ------------------------------------------------------ */
     .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden}
     .fill{ height:100%; width:0%; background: linear-gradient(90deg,var(--bar-start),var(--bar-end)); transition:width .3s ease, background .3s ease, opacity .25s ease; }
     .barRow{ display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center; }
     .clockRight{ text-align:right; font-size:28px; font-weight:700; letter-spacing:.5px; font-variant-numeric: tabular-nums; }
 
-    /* ---------- Tasks ---------- */
+    /* Tasks ----------------------------------------------------------------- */
     .tasks{ margin-top:12px; border-top:1px dashed rgba(255,255,255,.07); padding-top:12px; }
     .tasksHeader{ display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; color:#dbe6ff; font-weight:800; letter-spacing:.2px; }
     .tasksHeader svg{ width:16px; height:16px; transform:rotate(0deg); transition:transform .2s ease }
@@ -102,40 +111,58 @@
       font-weight:700; color:#d9e8ff;
     }
     .est[contenteditable="true"]{ outline:none; border-color:var(--focus); box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent) }
-
-    /* Trash can (hidden until hover) */
     .trash{ display:grid; place-items:center; width:30px; height:30px; color:transparent; cursor:pointer; border:none; background:transparent; }
     .item:hover .trash{ color:var(--danger); }
     .trash svg{ width:18px; height:18px; }
 
-    /* Add row at bottom */
+    /* Add row */
     .addRow{ display:grid; grid-template-columns: 1fr auto auto; gap:8px; margin-top:10px; align-items:center }
     .addRow input[name="taskTitle"]{ width:100% }
     .addRow input[name="taskEst"]{ width:110px; text-align:center }
     #addBtn{ background:transparent; border:none; color:#fff; cursor:pointer; font-size:22px; line-height:1; width:36px; height:36px; display:grid; place-items:center; }
     #addBtn:hover{ color:var(--accent); }
 
-    /* Tips collapsible (below add row) */
+    /* Tips */
     .tips{ margin-top:8px; }
-    .tipsHeader{ display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; color:var(--muted); font-size:12px; font-weight:600; }
+    .tipsHeader{ display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; color:#a7b2cc; font-size:12px; font-weight:600; }
     .tipsHeader svg{ width:12px; height:12px; transform:rotate(0deg); transition:transform .2s ease }
     .tipsHeader.collapsed svg{ transform:rotate(-90deg) }
-    .tipsBody{ color:var(--muted); font-size:12px; margin-top:6px; display:block }
+    .tipsBody{ color:#a7b2cc; font-size:12px; margin-top:6px; display:block }
     .tipsBody .link{ color:#b9d4ff; text-decoration:none }
     .tipsBody .link:hover{ text-decoration:underline }
-
-    .hidden{display:none!important}
   </style>
 </head>
 <body>
   <div class="card" id="app">
 
-    <!-- Top bar: banner+% left | controls right -->
+    <!-- Top bar: left switches between preRow and runRow; right is controls -->
     <div class="topbar">
       <div class="leftTop">
-        <div class="banner hidden" id="banner" title=""></div>
-        <div class="pctTop" id="pctTop">0%</div>
+        <!-- Pre-start form row -->
+        <div class="preRow" id="preRow">
+          <div class="field taskField" id="taskField">
+            <label>Task name</label>
+            <input id="label" type="text" placeholder="e.g., Court Documentation" />
+          </div>
+          <div class="field" id="durationField">
+            <label>Duration</label>
+            <div class="durationField">
+              <input id="mins" type="number" min="1" step="1" value="25"/>
+              <select id="unit">
+                <option value="min" selected>minutes</option>
+                <option value="hr">hours</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Running row (shows after Start) -->
+        <div class="runRow hidden" id="runRow">
+          <div class="banner" id="banner" title=""></div>
+          <div class="pctTop hidden" id="pctTop">0%</div>
+        </div>
       </div>
+
       <div class="actions">
         <button class="iconbtn" id="toggleBtn" title="Start" aria-label="Start">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -152,33 +179,15 @@
       </div>
     </div>
 
-    <!-- Task + Duration inline (tight) -->
-    <div class="grid-inline">
-      <div class="field" id="taskField">
-        <label>Task name</label>
-        <input id="label" type="text" placeholder="e.g., Series 65 Study Sprint" />
-      </div>
-      <div class="field" id="durationField">
-        <label>Duration</label>
-        <div class="row">
-          <input id="mins" type="number" min="1" step="1" value="25" style="width:110px"/>
-          <select id="unit">
-            <option value="min" selected>minutes</option>
-            <option value="hr">hours</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
     <!-- progress + clock on right -->
-    <div style="margin-top:8px">
+    <div>
       <div class="barRow">
         <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
         <div class="clockRight" id="clock">25:00</div>
       </div>
     </div>
 
-    <!-- Collapsible To-Do -->
+    <!-- To-do list -->
     <div class="tasks" id="tasks">
       <div class="tasksHeader" id="tasksHeader" title="Toggle to-do list">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 10l4 4 4-4"/></svg>
@@ -188,14 +197,12 @@
 
       <div class="list" id="taskList"></div>
 
-      <!-- Add row at bottom -->
       <div class="addRow" id="addRow">
         <input name="taskTitle" id="taskTitle" type="text" placeholder="Add a task…"/>
         <input name="taskEst" id="taskEst" type="text" placeholder="e.g., 25m or 2h" />
         <button id="addBtn" title="Add task" aria-label="Add task">+</button>
       </div>
 
-      <!-- Tips (below add row) + Share preset -->
       <div class="tips">
         <div class="tipsHeader" id="tipsHeader" title="Toggle tips">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 10l4 4 4-4"/></svg>
@@ -216,24 +223,31 @@
 <script>
 (function(){
   const $ = id=>document.getElementById(id);
+
+  /* Topbar elements */
+  const preRow = $('preRow');
+  const runRow = $('runRow');
+  const banner = $('banner');
+  const pctTop = $('pctTop');
+
+  /* Inputs / controls */
   const label=$('label'), mins=$('mins'), unit=$('unit');
-  const clock=$('clock');
   const toggleBtn=$('toggleBtn'), resetBtn=$('resetBtn');
-  const bar=$('bar'), fill=$('fill'), pctTop=$('pctTop');
+  const clock=$('clock');
+  const bar=$('bar'), fill=$('fill');
   const ding=$('ding');
   const shareLink=$('shareLink');
-  const banner=$('banner');
-  const taskField=$('taskField');
-  const durationField=$('durationField');
 
-  /* Tasks UI refs */
-  const tasks=$('tasks'), tasksHeader=$('tasksHeader'), tasksCount=$('tasksCount');
-  const addRow=$('addRow'), addBtn=$('addBtn'), taskTitle=$('taskTitle'), taskEst=$('taskEst');
+  /* Tasks */
+  const tasksCount=$('tasksCount');
   const taskList=$('taskList');
-  const tipsHeader=$('tipsHeader'), tipsBody=$('tipsBody');
+  const addBtn=$('addBtn'), taskTitle=$('taskTitle'), taskEst=$('taskEst');
+  const tasksHeader=$('tasksHeader'), tipsHeader=$('tipsHeader'), tipsBody=$('tipsBody');
 
   let totalMs=0, startAt=0, elapsedMs=0, timer=null, running=false;
+  let todos=[];
 
+  /* Helpers */
   const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
   function fmt(ms){
     ms=Math.max(0,Math.floor(ms/1000));
@@ -246,67 +260,68 @@
     totalMs = Math.max(1000,totalMs);
   }
   function updateShare(){
+    if(!shareLink) return;
     const params=new URLSearchParams({label:label.value, mins:mins.value, unit:unit.value});
     shareLink.href = `${location.origin}${location.pathname}?${params.toString()}`;
   }
-  function setGradient(p){
-    if(p < 67){ 
-      fill.style.setProperty('--bar-start','#2e7ddd'); 
-      fill.style.setProperty('--bar-end','#5aa8ff'); 
+  function setGradientAndPct(p){
+    if(p < 67){
+      fill.style.setProperty('--bar-start','#2e7ddd');
+      fill.style.setProperty('--bar-end','#5aa8ff');
       pctTop.style.color = '#cfe0ff';
-    } else { 
-      fill.style.setProperty('--bar-start','#3dbd6d'); 
-      fill.style.setProperty('--bar-end','#6be28f'); 
+    }else{
+      fill.style.setProperty('--bar-start','#3dbd6d');
+      fill.style.setProperty('--bar-end','#6be28f');
       pctTop.style.color = '#6be28f';
     }
   }
   function draw(){
     const done=clamp(elapsedMs,0,totalMs);
     const p = Math.round( (done/totalMs)*100 );
-    setGradient(p);
+    setGradientAndPct(p);
     fill.style.width = p + '%';
-    pctTop.textContent = p + '%';
+    if(!pctTop.classList.contains('hidden')) pctTop.textContent = p + '%';
     clock.textContent = fmt(totalMs - done);
   }
+
   function setState(newRunning){
     running=newRunning;
     toggleBtn.title = running ? 'Pause' : 'Start';
     toggleBtn.setAttribute('aria-label', toggleBtn.title);
     resetBtn.disabled = !running && elapsedMs===0;
     toggleBtn.innerHTML = running
-      ? `<svg viewBox="0 0 24 24" aria-hidden="true">
-           <circle class="ring" cx="12" cy="12" r="10" />
-           <rect class="shape" x="9" y="7" width="2.8" height="10" rx="0.8"/>
-           <rect class="shape" x="12.8" y="7" width="2.8" height="10" rx="0.8"/>
-         </svg>`
-      : `<svg viewBox="0 0 24 24" aria-hidden="true">
-           <circle class="ring" cx="12" cy="12" r="10" />
-           <path class="shape" d="M10 8v8l6-4z"/>
-         </svg>`;
+      ? `<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="ring" cx="12" cy="12" r="10" /><rect class="shape" x="9" y="7" width="2.8" height="10" rx="0.8"/><rect class="shape" x="12.8" y="7" width="2.8" height="10" rx="0.8"/></svg>`
+      : `<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="ring" cx="12" cy="12" r="10" /><path class="shape" d="M10 8v8l6-4z"/></svg>`;
   }
+
+  function showPreRow(){
+    preRow.classList.remove('hidden');
+    runRow.classList.add('hidden');
+    pctTop.classList.add('hidden');   // % hidden pre-start
+  }
+  function showRunRow(){
+    const taskText = label.value || 'Untitled Task';
+    banner.textContent = taskText;
+    banner.title = taskText;
+    preRow.classList.add('hidden');
+    runRow.classList.remove('hidden');
+    pctTop.classList.remove('hidden'); // % visible only after start
+  }
+
   function start(){
     computeTotal();
     if(elapsedMs>=totalMs){ elapsedMs=0; }
     if(!running){ startAt=Date.now()-elapsedMs; timer=requestAnimationFrame(tick); }
     setState(true);
-    // show banner text inline on the left
-    const taskText = label.value || 'Untitled Task';
-    banner.textContent = taskText;
-    banner.title = taskText;
-    banner.classList.remove('hidden');
-    // hide inputs row
-    taskField.classList.add('hidden');
-    durationField.classList.add('hidden');
+    showRunRow();
   }
   function pause(){
     if(running){ cancelAnimationFrame(timer); elapsedMs=Date.now()-startAt; setState(false); draw(); }
   }
   function reset(){
     cancelAnimationFrame(timer); elapsedMs=0; setState(false); draw();
-    // hide banner text but keep topbar layout height
-    banner.classList.add('hidden'); banner.textContent = ''; banner.removeAttribute('title');
-    taskField.classList.remove('hidden');
-    durationField.classList.remove('hidden');
+    // Back to pre-start layout
+    showPreRow();
   }
   function tick(){
     elapsedMs = Date.now()-startAt;
@@ -319,10 +334,8 @@
     draw(); timer=requestAnimationFrame(tick);
   }
 
-  /* ---------- Tasks: data + persistence ---------- */
-  let todos = []; // {id, title, estimate, done}
-  function uid(){ return Math.random().toString(36).slice(2,9); }
-  function saveAll(){ const data={ timer:{label:label.value, mins:mins.value, unit:unit.value}, todos }; try{ localStorage.setItem('focus-timer-v2', JSON.stringify(data)); }catch(e){} }
+  /* Storage */
+  function saveAll(){ try{ localStorage.setItem('focus-timer-v2', JSON.stringify({timer:{label:label.value, mins:mins.value, unit:unit.value}, todos})) }catch(e){} }
   function loadAll(){
     try{
       const raw = localStorage.getItem('focus-timer-v2'); if(!raw) return;
@@ -332,13 +345,13 @@
     }catch(e){}
   }
 
-  /* Estimate parsing */
+  /* Estimates */
   function parseEstimate(text){
     if(!text) return null;
     const s = String(text).trim().toLowerCase().replace(/\s+/g,''); if(!s) return null;
     let h=0, m=0; const m1 = s.match(/^(?:(\d+(?:\.\d+)?)h)?(?:(\d+)m)?$/);
-    if(m1){ if(m1[1]) h = parseFloat(m1[1]); if(m1[2]) m = parseInt(m1[2],10)||0; const totalMin = Math.round(h*60 + m); return {mins: totalMin, unit:'min', pretty: prettyEstimate(totalMin)}; }
-    if(/^\d+$/.test(s)){ const totalMin = parseInt(s,10); return {mins: totalMin, unit:'min', pretty: prettyEstimate(totalMin)}; }
+    if(m1){ if(m1[1]) h = parseFloat(m1[1]); if(m1[2]) m = parseInt(m1[2],10)||0; const totalMin = Math.round(h*60 + m); return {mins: totalMin, pretty: prettyEstimate(totalMin)}; }
+    if(/^\d+$/.test(s)){ const totalMin = parseInt(s,10); return {mins: totalMin, pretty: prettyEstimate(totalMin)}; }
     return null;
   }
   function prettyEstimate(totalMin){
@@ -347,141 +360,125 @@
     return `${totalMin}m`;
   }
 
-  /* Tasks UI */
+  /* Tasks */
+  function uid(){ return Math.random().toString(36).slice(2,9); }
   function renderTasks(){
-    taskList.innerHTML = '';
-    let open = 0;
-    // Render in insertion order (chronological)
-    todos.forEach(t => {
+    taskList.innerHTML='';
+    let open=0;
+    todos.forEach(t=>{
       if(!t.done) open++;
-      const row = document.createElement('div'); row.className = 'item';
+      const row=document.createElement('div'); row.className='item';
 
-      const check = document.createElement('div');
-      check.className = 'check' + (t.done ? ' done':'');
-      check.title = t.done ? 'Mark as not done' : 'Mark as done';
-      check.addEventListener('click', ()=>{ t.done = !t.done; saveAll(); renderTasks(); });
-      const dot = document.createElement('div');
+      const check=document.createElement('div');
+      check.className='check'+(t.done?' done':'');
+      check.title=t.done?'Mark as not done':'Mark as done';
+      check.addEventListener('click', ()=>{ t.done=!t.done; saveAll(); renderTasks(); });
+      const dot=document.createElement('div');
       dot.style.width='8px'; dot.style.height='8px'; dot.style.borderRadius='50%'; dot.style.background='currentColor'; dot.style.opacity='0.9';
       check.appendChild(dot);
 
-      const title = document.createElement('div');
-      title.className = 'title' + (t.done ? ' done' : '');
-      title.textContent = t.title;
-      title.title = 'Click to set timer from this task';
+      const title=document.createElement('div');
+      title.className='title'+(t.done?' done':'');
+      title.textContent=t.title;
+      title.title='Click to apply this task and estimate';
       title.addEventListener('click', ()=>{
-        label.value = t.title;
+        label.value=t.title;
         if(t.estimate){
-          const parsed = parseEstimate(t.estimate);
-          if(parsed){ mins.value = parsed.mins; unit.value = 'min'; }
+          const parsed=parseEstimate(t.estimate);
+          if(parsed){ mins.value=parsed.mins; unit.value='min'; }
         }
-        elapsedMs = 0; computeTotal(); draw(); updateShare(); saveAll();
+        elapsedMs=0; computeTotal(); draw(); updateShare(); saveAll();
       });
 
-      const est = document.createElement('span');
-      est.className = 'est'; est.textContent = t.estimate || '';
-      est.title = 'Click to set timer • Shift+Click to edit';
+      const est=document.createElement('span');
+      est.className='est'; est.textContent=t.estimate||'';
+      est.title='Click to set timer • Shift+Click to edit';
       est.addEventListener('click', (e)=>{
         if(e.shiftKey){
-          est.setAttribute('contenteditable', 'true'); est.focus();
-          const sel = window.getSelection(); const r = document.createRange();
+          est.setAttribute('contenteditable','true'); est.focus();
+          const sel=window.getSelection(); const r=document.createRange();
           r.selectNodeContents(est); sel.removeAllRanges(); sel.addRange(r);
           return;
         }
-        const parsed = parseEstimate(est.textContent); if(!parsed) return;
-        mins.value = parsed.mins; unit.value = 'min';
-        label.value = t.title || label.value;
-        elapsedMs = 0; computeTotal(); draw(); updateShare(); saveAll();
+        const parsed=parseEstimate(est.textContent); if(!parsed) return;
+        mins.value=parsed.mins; unit.value='min';
+        label.value=t.title||label.value;
+        elapsedMs=0; computeTotal(); draw(); updateShare(); saveAll();
       });
       est.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); est.blur(); } });
       est.addEventListener('blur', ()=>{
         if(est.getAttribute('contenteditable')!=='true') return;
         est.removeAttribute('contenteditable');
-        const parsed = parseEstimate(est.textContent);
-        est.textContent = parsed ? (t.estimate = parsed.pretty) : (t.estimate || '');
+        const parsed=parseEstimate(est.textContent);
+        est.textContent= parsed ? (t.estimate=parsed.pretty) : (t.estimate||'');
         saveAll();
       });
 
-      const trash = document.createElement('button');
-      trash.className = 'trash'; trash.title = 'Delete task';
-      trash.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">
-        <path class="shape" fill="currentColor" d="M9 3h6l1 2h4v2h-1l-1 12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 7H4V5h4l1-2zm1.5 6v9h2V9h-2z"/>
-      </svg>`;
-      trash.addEventListener('click', ()=>{ todos = todos.filter(x=>x!==t); saveAll(); renderTasks(); });
+      const trash=document.createElement('button');
+      trash.className='trash'; trash.title='Delete task';
+      trash.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><path class="shape" fill="currentColor" d="M9 3h6l1 2h4v2h-1l-1 12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 7H4V5h4l1-2zm1.5 6v9h2V9h-2z"/></svg>`;
+      trash.addEventListener('click', ()=>{ todos=todos.filter(x=>x!==t); saveAll(); renderTasks(); });
 
       row.appendChild(check); row.appendChild(title); row.appendChild(est); row.appendChild(trash);
       taskList.appendChild(row);
     });
-    tasksCount.textContent = `${open} open`;
+    tasksCount.textContent=`${open} open`;
   }
 
   function addTask(){
-    const title = taskTitle.value.trim();
-    const estRaw = taskEst.value.trim();
+    const title=taskTitle.value.trim();
+    const estRaw=taskEst.value.trim();
     if(!title) return;
-    let pretty = '';
-    if(estRaw){ const parsed = parseEstimate(estRaw); if(parsed) pretty = parsed.pretty; }
-    // chronological: push to end (first stays on top)
-    todos.push({ id: uid(), title, estimate: pretty, done:false });
+    let pretty='';
+    if(estRaw){ const parsed=parseEstimate(estRaw); if(parsed) pretty=parsed.pretty; }
+    // chronological order: push to end (first entered stays on top)
+    todos.push({id:uid(), title, estimate:pretty, done:false});
     taskTitle.value=''; taskEst.value='';
     saveAll(); renderTasks();
-    // focus back to title for rapid entry
-    taskTitle.focus();
-  }
-
-  /* Collapsibles */
-  let collapsedTasks = false;
-  function setCollapsedTasks(c){
-    collapsedTasks = c;
-    if(collapsedTasks){
-      tasksHeader.classList.add('collapsed');
-      taskList.style.display='none';
-      addRow.style.display='none';
-      tipsHeader.style.display='none';
-      tipsBody.style.display='none';
-    }else{
-      tasksHeader.classList.remove('collapsed');
-      taskList.style.display='';
-      addRow.style.display='';
-      tipsHeader.style.display='';
-      tipsBody.style.display= collapsedTips ? 'none' : 'block';
-    }
-  }
-
-  let collapsedTips = true; // tips collapsed by default
-  function setCollapsedTips(c){
-    collapsedTips = c;
-    if(collapsedTips){ tipsHeader.classList.add('collapsed'); tipsBody.style.display='none'; }
-    else{ tipsHeader.classList.remove('collapsed'); tipsBody.style.display='block'; }
+    taskTitle.focus(); // keep typing next task
   }
 
   /* Events */
   [label, mins, unit].forEach(el=>{
-    el.addEventListener('input',()=>{ updateShare(); saveAll(); computeTotal(); draw(); });
+    el.addEventListener('input', ()=>{ updateShare(); saveAll(); computeTotal(); draw(); });
     el.addEventListener('change',()=>{ updateShare(); saveAll(); computeTotal(); draw(); });
   });
   toggleBtn.addEventListener('click', ()=>{ running ? pause() : start(); saveAll(); });
   resetBtn.addEventListener('click', ()=>{ reset(); saveAll(); });
 
-  // Enter adds task (from either field), then refocus title
   document.addEventListener('keydown', (e)=>{
     if(e.key==='Enter' && (document.activeElement===taskTitle || document.activeElement===taskEst)){
       e.preventDefault(); addTask();
     }
     if(e.key==='r' || e.key==='R'){ reset(); }
   });
-
   addBtn.addEventListener('click', addTask);
-  tasksHeader.addEventListener('click', ()=> setCollapsedTasks(!collapsedTasks));
-  tipsHeader.addEventListener('click', ()=> setCollapsedTips(!collapsedTips));
+
+  tasksHeader.addEventListener('click', ()=>{
+    const c = document.body.dataset.tasksCollapsed === '1';
+    document.body.dataset.tasksCollapsed = c ? '0' : '1';
+    tasksHeader.classList.toggle('collapsed', !c);
+    document.querySelector('.list').style.display = c ? '' : 'none';
+    document.querySelector('.addRow').style.display = c ? '' : 'none';
+    const tipsH = $('tipsHeader'), tipsB = $('tipsBody');
+    tipsH.style.display = c ? '' : 'none';
+    tipsB.style.display = c ? (document.body.dataset.tipsCollapsed==='1' ? 'none':'block') : 'none';
+  });
+  tipsHeader.addEventListener('click', ()=>{
+    const t = document.body.dataset.tipsCollapsed === '1';
+    document.body.dataset.tipsCollapsed = t ? '0' : '1';
+    tipsHeader.classList.toggle('collapsed', !t);
+    tipsBody.style.display = t ? 'block' : 'none';
+  });
 
   /* Init */
   (function init(){
     try{ if('Notification' in window && Notification.permission==='default'){ Notification.requestPermission().catch(()=>{}); } }catch(e){}
-    loadAll();
-    computeTotal(); draw(); updateShare();
+    loadAll(); computeTotal(); draw(); updateShare();
     renderTasks();
-    setCollapsedTasks(false);
-    setCollapsedTips(true);
+    // Ensure pre-start layout (duration next to task; % hidden)
+    showPreRow();
+    document.body.dataset.tipsCollapsed='1';
   })();
 })();
 </script>
