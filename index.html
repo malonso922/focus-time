@@ -28,10 +28,19 @@
       padding:12px 16px 18px;
     }
 
-    /* --- Top bar actions (RIGHT aligned now) --- */
+    /* --- Top bar: banner left, controls right --- */
     .topbar{
-      display:flex; align-items:center; gap:8px; margin-bottom:8px; justify-content:flex-end;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:8px; margin-bottom:8px;
     }
+    .banner{
+      font-size:16px; font-weight:800; color:#e6eeff;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      max-width:60%;
+    }
+    .banner.hidden{visibility:hidden} /* keep row height stable */
+
+    .actions{ display:flex; align-items:center; gap:8px }
     .iconbtn{
       width:36px; height:36px; display:grid; place-items:center; border-radius:999px;
       border:none; background:transparent; cursor:pointer; color:#e8f0ff;
@@ -51,9 +60,6 @@
     }
     input:focus,select:focus{ border-color:var(--focus); box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent); }
     #durationField .row{display:flex; gap:8px; align-items:center}
-
-    /* Left-aligned banner while running */
-    .banner{margin:0 0 6px; font-size:16px; font-weight:800; text-align:left; color:#e6eeff}
 
     /* progress + dynamic clock on right */
     .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden}
@@ -113,24 +119,24 @@
 <body>
   <div class="card" id="app">
 
-    <!-- Top-right controls -->
+    <!-- Top bar: banner left | controls right -->
     <div class="topbar">
-      <button class="iconbtn" id="toggleBtn" title="Start" aria-label="Start">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle class="ring" cx="12" cy="12" r="10" />
-          <path class="shape" d="M10 8v8l6-4z"/>
-        </svg>
-      </button>
-      <button class="iconbtn" id="resetBtn" title="Reset" aria-label="Reset" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle class="ring" cx="12" cy="12" r="10" />
-          <rect class="shape" x="8.5" y="8.5" width="7" height="7" rx="1.2"/>
-        </svg>
-      </button>
+      <div class="banner hidden" id="banner"></div>
+      <div class="actions">
+        <button class="iconbtn" id="toggleBtn" title="Start" aria-label="Start">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle class="ring" cx="12" cy="12" r="10" />
+            <path class="shape" d="M10 8v8l6-4z"/>
+          </svg>
+        </button>
+        <button class="iconbtn" id="resetBtn" title="Reset" aria-label="Reset" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle class="ring" cx="12" cy="12" r="10" />
+            <rect class="shape" x="8.5" y="8.5" width="7" height="7" rx="1.2"/>
+          </svg>
+        </button>
+      </div>
     </div>
-
-    <!-- Left-aligned banner on start -->
-    <div class="banner hidden" id="banner"></div>
 
     <!-- Task + Duration inline -->
     <div class="grid-inline">
@@ -267,8 +273,10 @@
     if(elapsedMs>=totalMs){ elapsedMs=0; }
     if(!running){ startAt=Date.now()-elapsedMs; timer=requestAnimationFrame(tick); }
     setState(true);
+    // show banner text inline on the left
     banner.textContent = label.value || 'Untitled Task';
-    banner.classList.remove('hidden');
+    banner.classList.remove('hidden'); // visibility: visible
+    // hide inputs row
     taskField.classList.add('hidden');
     durationField.classList.add('hidden');
   }
@@ -277,7 +285,9 @@
   }
   function reset(){
     cancelAnimationFrame(timer); elapsedMs=0; setState(false); draw();
-    banner.classList.add('hidden');
+    // hide banner text but keep topbar layout height
+    banner.classList.add('hidden'); // visibility: hidden via CSS
+    banner.textContent = '';
     taskField.classList.remove('hidden');
     durationField.classList.remove('hidden');
   }
