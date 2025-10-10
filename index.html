@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <title>Focus Timer • Countdown + Progress</title>
+  <title>Focus Timer • Countdown + Progress + Tasks</title>
   <style>
     :root{
       --bg:#111111;         /* ClickUp dark */
@@ -15,7 +15,7 @@
       --accent:#4da3ff;
       --accent-2:#49d47a;
 
-      /* gradient stops for the progress fill (updated live by JS) */
+      /* gradient stops (dark -> light) for progress fill */
       --bar-start:#2e7ddd;  /* darker left */
       --bar-end:#5aa8ff;    /* lighter right */
 
@@ -32,7 +32,7 @@
       display:grid; place-items:center; padding:16px;
     }
     .card{
-      width:min(640px,100%); background:var(--panel);
+      width:min(680px,100%); background:var(--panel);
       border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:0 10px 30px rgba(0,0,0,.4);
       padding:16px 16px 18px;
     }
@@ -46,7 +46,7 @@
       box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent);
     }
 
-    /* two fields; Duration aligned to the right edge */
+    /* top fields; Duration aligned to the right edge */
     .grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:start}
     @media (max-width:640px){.grid{grid-template-columns:minmax(0,1fr)}}
     #durationField{justify-self:end; text-align:right}
@@ -74,7 +74,7 @@
 
     .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
 
-    /* footer is one row: link left, chips center, icons right */
+    /* footer: link | chips | toggle+reset */
     .footer{
       display:grid; grid-template-columns:auto 1fr auto; align-items:center;
       gap:10px; margin-top:12px; color:var(--muted)
@@ -100,6 +100,41 @@
 
     .hidden{display:none!important}
     .banner{margin:-4px 0 8px; font-size:16px; font-weight:800; text-align:center; color:#e6eeff}
+
+    /* ---------- Tasks section ---------- */
+    .tasks{
+      margin-top:14px; border-top:1px dashed rgba(255,255,255,.07); padding-top:12px;
+    }
+    .tasksHeader{
+      display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none;
+      color:#dbe6ff; font-weight:800; letter-spacing:.2px;
+    }
+    .tasksHeader svg{ width:16px; height:16px; transform:rotate(0deg); transition:transform .2s ease }
+    .tasksHeader.collapsed svg{ transform:rotate(-90deg) }
+    .tasksHeader .count{ color:var(--muted); font-weight:600; margin-left:auto }
+
+    .addRow{ display:grid; grid-template-columns: 1fr auto auto; gap:8px; margin-top:10px }
+    .addRow input[name="taskTitle"]{ width:100% }
+    .addRow input[name="taskEst"]{ width:110px; text-align:center }
+
+    .list{ margin-top:6px; display:grid; gap:6px }
+    .item{
+      display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center;
+      padding:8px 10px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:#121212;
+    }
+    .check{
+      width:18px; height:18px; border-radius:50%; border:2px solid rgba(255,255,255,.35);
+      display:grid; place-items:center; cursor:pointer; transition:border-color .15s ease, background .15s ease;
+    }
+    .check.done{ background:var(--accent-2); border-color:var(--accent-2) }
+    .title{ font-weight:600; color:#e9f2ff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+    .title.done{ text-decoration:line-through; color:#8fa0bf }
+    .est{
+      border:1px solid rgba(255,255,255,.15); padding:4px 10px; border-radius:999px; cursor:pointer; background:#0f0f0f; min-width:48px; text-align:center;
+      font-weight:700; color:#d9e8ff;
+    }
+    .est[contenteditable="true"]{ outline:none; border-color:var(--focus); box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent) }
+    .hint{ color:var(--muted); font-size:12px; margin-top:6px }
   </style>
 </head>
 <body>
@@ -139,7 +174,6 @@
     <div class="footer">
       <a class="link" href="#" id="shareLink">Share preset</a>
 
-      <!-- chips centered in the same row as icons -->
       <div class="presets" id="presets">
         <span class="chip" data-mins="15">15m</span>
         <span class="chip" data-mins="25">25m</span>
@@ -164,6 +198,24 @@
         </button>
       </div>
     </div>
+
+    <!-- Collapsible To-Do -->
+    <div class="tasks" id="tasks">
+      <div class="tasksHeader" id="tasksHeader" title="Toggle to-do list">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 10l4 4 4-4"/></svg>
+        To-do
+        <span class="count" id="tasksCount">0 open</span>
+      </div>
+
+      <div class="addRow" id="addRow">
+        <input name="taskTitle" id="taskTitle" type="text" placeholder="Add a task… (Enter to save)"/>
+        <input name="taskEst" id="taskEst" type="text" placeholder="e.g., 25m or 2h" />
+        <button id="addBtn">Add</button>
+      </div>
+
+      <div class="list" id="taskList"></div>
+      <div class="hint">Tip: click an estimate to set the timer • <strong>Shift+Click</strong> an estimate to edit it.</div>
+    </div>
   </div>
 
   <audio id="ding" preload="auto">
@@ -184,40 +236,33 @@
   const taskField=$('taskField');
   const durationField=$('durationField');
 
+  /* Tasks UI refs */
+  const tasks=$('tasks'), tasksHeader=$('tasksHeader'), tasksCount=$('tasksCount');
+  const addRow=$('addRow'), addBtn=$('addBtn'), taskTitle=$('taskTitle'), taskEst=$('taskEst');
+  const taskList=$('taskList');
+
   let totalMs=0, startAt=0, elapsedMs=0, timer=null, running=false;
 
+  /* ---------- Timer Helpers ---------- */
   const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
   function fmt(ms){
     ms=Math.max(0,Math.floor(ms/1000));
     const h=Math.floor(ms/3600), m=Math.floor((ms%3600)/60), s=ms%60;
     return h? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
   }
-
   function computeTotal(){
     const v=parseFloat(mins.value||0);
     totalMs = (unit.value==='hr'? v*60 : v) * 60*1000;
     totalMs = Math.max(1000,totalMs);
   }
-
   function updateShare(){
     const params=new URLSearchParams({label:label.value, mins:mins.value, unit:unit.value});
     shareLink.href = `${location.origin}${location.pathname}?${params.toString()}`;
   }
-
-  // gradient controller: dark -> light; no color change at 100%
   function setGradient(p){
-    if(p < 67){
-      // early/mid: blue (dark->light)
-      fill.style.setProperty('--bar-start', '#2e7ddd'); // darker
-      fill.style.setProperty('--bar-end',   '#5aa8ff'); // lighter
-    }else{
-      // late: green (dark->light)
-      fill.style.setProperty('--bar-start', '#3dbd6d'); // darker
-      fill.style.setProperty('--bar-end',   '#6be28f'); // lighter
-    }
-    // note: intentionally NO special case for p >= 100 (keeps last color)
+    if(p < 67){ fill.style.setProperty('--bar-start','#2e7ddd'); fill.style.setProperty('--bar-end','#5aa8ff'); }
+    else      { fill.style.setProperty('--bar-start','#3dbd6d'); fill.style.setProperty('--bar-end','#6be28f'); }
   }
-
   function draw(){
     const done=clamp(elapsedMs,0,totalMs);
     const p = Math.round( (done/totalMs)*100 );
@@ -227,14 +272,11 @@
     clock.textContent = fmt(totalMs - done);
     elapsed.textContent = fmt(done);
   }
-
   function setState(newRunning){
     running=newRunning;
     toggleBtn.title = running ? 'Pause' : 'Start';
     toggleBtn.setAttribute('aria-label', toggleBtn.title);
     resetBtn.disabled = !running && elapsedMs===0;
-
-    // swap icon: play <-> pause
     toggleBtn.innerHTML = running
       ? `<svg viewBox="0 0 24 24" aria-hidden="true">
            <circle class="ring" cx="12" cy="12" r="10" />
@@ -246,33 +288,27 @@
            <path class="shape" d="M10 8v8l6-4z"/>
          </svg>`;
   }
-
   function start(){
     computeTotal();
     if(elapsedMs>=totalMs){ elapsedMs=0; }
     if(!running){ startAt=Date.now()-elapsedMs; timer=requestAnimationFrame(tick); }
     setState(true);
-    // show banner; hide inputs + chips
     banner.textContent = label.value || 'Untitled Task';
     banner.classList.remove('hidden');
     taskField.classList.add('hidden');
     durationField.classList.add('hidden');
     presets.classList.add('hidden');
   }
-
   function pause(){
     if(running){ cancelAnimationFrame(timer); elapsedMs=Date.now()-startAt; setState(false); draw(); }
   }
-
   function reset(){
     cancelAnimationFrame(timer); elapsedMs=0; setState(false); draw();
-    // restore UI
     banner.classList.add('hidden');
     taskField.classList.remove('hidden');
     durationField.classList.remove('hidden');
     presets.classList.remove('hidden');
   }
-
   function tick(){
     elapsedMs = Date.now()-startAt;
     if(elapsedMs>=totalMs){
@@ -284,51 +320,207 @@
     draw(); timer=requestAnimationFrame(tick);
   }
 
-  // events
+  /* ---------- Tasks: data + persistence ---------- */
+  let todos = []; // {id, title, estimate, done}
+
+  function uid(){ return Math.random().toString(36).slice(2,9); }
+
+  function saveAll(){
+    const data={
+      timer:{label:label.value, mins:mins.value, unit:unit.value},
+      todos
+    };
+    try{ localStorage.setItem('focus-timer-v2', JSON.stringify(data)); }catch(e){}
+  }
+  function loadAll(){
+    try{
+      const raw = localStorage.getItem('focus-timer-v2');
+      if(!raw) return;
+      const data = JSON.parse(raw);
+      if(data.timer){
+        if(data.timer.label!=null) label.value=data.timer.label;
+        if(data.timer.mins!=null) mins.value=data.timer.mins;
+        if(data.timer.unit!=null) unit.value=data.timer.unit;
+      }
+      if(Array.isArray(data.todos)) todos = data.todos;
+    }catch(e){}
+  }
+
+  /* Estimate parsing: accepts "15m", "2h", "1h30m", "90m", "1.5h" */
+  function parseEstimate(text){
+    if(!text) return null;
+    const s = String(text).trim().toLowerCase().replace(/\s+/g,'');
+    if(!s) return null;
+    let h=0, m=0;
+    // 1h30m or 2h or 45m
+    const m1 = s.match(/^(?:(\d+(?:\.\d+)?)h)?(?:(\d+)m)?$/);
+    if(m1){
+      if(m1[1]) h = parseFloat(m1[1]);
+      if(m1[2]) m = parseInt(m1[2],10)||0;
+      const totalMin = Math.round(h*60 + m);
+      return {mins: totalMin, unit:'min', pretty: prettyEstimate(totalMin)};
+    }
+    // pure minutes like "90"
+    if(/^\d+$/.test(s)){
+      const totalMin = parseInt(s,10);
+      return {mins: totalMin, unit:'min', pretty: prettyEstimate(totalMin)};
+    }
+    return null;
+  }
+  function prettyEstimate(totalMin){
+    if(totalMin % 60 === 0){
+      const hrs = totalMin/60;
+      return `${hrs}h`;
+    }
+    if(totalMin > 60){
+      const hrs = Math.floor(totalMin/60);
+      const mins = totalMin % 60;
+      return `${hrs}h${mins}m`;
+    }
+    return `${totalMin}m`;
+  }
+
+  /* Tasks UI updates */
+  function renderTasks(){
+    taskList.innerHTML = '';
+    let open = 0;
+    todos.forEach(t => {
+      if(!t.done) open++;
+      const row = document.createElement('div');
+      row.className = 'item';
+
+      const check = document.createElement('div');
+      check.className = 'check' + (t.done ? ' done':'');
+      check.title = t.done ? 'Mark as not done' : 'Mark as done';
+      check.addEventListener('click', ()=>{
+        t.done = !t.done;
+        saveAll(); renderTasks();
+      });
+
+      const dot = document.createElement('div');
+      dot.style.width='8px'; dot.style.height='8px'; dot.style.borderRadius='50%'; dot.style.background='currentColor';
+      dot.style.opacity='0.9';
+      check.appendChild(dot);
+
+      const title = document.createElement('div');
+      title.className = 'title' + (t.done ? ' done' : '');
+      title.textContent = t.title;
+      title.title = 'Click to set as current task';
+      title.addEventListener('click', ()=>{
+        label.value = t.title;
+        saveAll();
+      });
+
+      const est = document.createElement('span');
+      est.className = 'est';
+      est.textContent = t.estimate || '';
+      est.title = 'Click to set timer • Shift+Click to edit';
+      est.addEventListener('click', (e)=>{
+        if(e.shiftKey){
+          // enter edit mode
+          est.setAttribute('contenteditable', 'true');
+          est.focus();
+          const sel = window.getSelection(); const r = document.createRange();
+          r.selectNodeContents(est); sel.removeAllRanges(); sel.addRange(r);
+          return;
+        }
+        // apply estimate to timer
+        const parsed = parseEstimate(est.textContent);
+        if(!parsed) return;
+        mins.value = parsed.mins;
+        unit.value = 'min';
+        label.value = t.title || label.value;
+        elapsedMs = 0; computeTotal(); draw(); updateShare(); saveAll();
+      });
+      est.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter'){ e.preventDefault(); est.blur(); }
+      });
+      est.addEventListener('blur', ()=>{
+        if(est.getAttribute('contenteditable')!=='true') return;
+        est.removeAttribute('contenteditable');
+        const parsed = parseEstimate(est.textContent);
+        if(parsed){
+          t.estimate = parsed.pretty;
+          est.textContent = t.estimate;
+        }else{
+          // revert if invalid
+          est.textContent = t.estimate || '';
+        }
+        saveAll();
+      });
+
+      row.appendChild(check);
+      row.appendChild(title);
+      row.appendChild(est);
+      taskList.appendChild(row);
+    });
+    tasksCount.textContent = `${open} open`;
+  }
+
+  function addTask(){
+    const title = taskTitle.value.trim();
+    const estRaw = taskEst.value.trim();
+    if(!title) return;
+    let pretty = '';
+    if(estRaw){
+      const parsed = parseEstimate(estRaw);
+      if(parsed) pretty = parsed.pretty;
+    }
+    todos.unshift({ id: uid(), title, estimate: pretty, done:false });
+    taskTitle.value=''; taskEst.value='';
+    saveAll(); renderTasks();
+  }
+
+  /* Collapsible behavior */
+  let collapsed = false;
+  function setCollapsed(c){
+    collapsed = c;
+    if(collapsed){
+      tasksHeader.classList.add('collapsed');
+      addRow.style.display='none';
+      taskList.style.display='none';
+      tasks.querySelector('.hint').style.display='none';
+    }else{
+      tasksHeader.classList.remove('collapsed');
+      addRow.style.display='';
+      taskList.style.display='';
+      tasks.querySelector('.hint').style.display='';
+    }
+  }
+
+  /* ---------- Events ---------- */
   [label, mins, unit].forEach(el=>{
-    el.addEventListener('input',()=>{ updateShare(); localSave(); computeTotal(); draw(); });
-    el.addEventListener('change',()=>{ updateShare(); localSave(); computeTotal(); draw(); });
+    el.addEventListener('input',()=>{ updateShare(); saveAll(); computeTotal(); draw(); });
+    el.addEventListener('change',()=>{ updateShare(); saveAll(); computeTotal(); draw(); });
   });
 
-  // No spacebar hotkey; keep 'R' for reset only
-  document.addEventListener('keydown', (e)=>{
-    if(e.key==='r' || e.key==='R'){ reset(); }
-  });
-
-  toggleBtn.addEventListener('click', ()=>{
-    running ? pause() : start();
-    localSave();
-  });
-  resetBtn.addEventListener('click', ()=>{ reset(); localSave(); });
+  toggleBtn.addEventListener('click', ()=>{ running ? pause() : start(); saveAll(); });
+  resetBtn.addEventListener('click', ()=>{ reset(); saveAll(); });
 
   presets.addEventListener('click', (e)=>{
     const chip=e.target.closest('.chip');
     if(!chip) return;
     mins.value = chip.dataset.mins;
     unit.value = 'min';
-    elapsedMs=0; computeTotal(); draw(); updateShare(); localSave();
+    elapsedMs=0; computeTotal(); draw(); updateShare(); saveAll();
   });
 
-  try{ if('Notification' in window && Notification.permission==='default'){ Notification.requestPermission().catch(()=>{}); } }catch(e){}
+  // Remove spacebar hotkey; keep 'R' for reset only
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='r' || e.key==='R'){ reset(); }
+    if(e.key==='Enter' && document.activeElement===taskTitle){ addTask(); }
+  });
 
-  function localSave(){
-    const data={label:label.value, mins:mins.value, unit:unit.value};
-    try{ localStorage.setItem('focus-timer-v1', JSON.stringify(data)); }catch(e){}
-  }
-  function localLoad(){
-    try{
-      const q=new URLSearchParams(location.search);
-      const fromUrl = { label:q.get('label'), mins:q.get('mins'), unit:q.get('unit') };
-      const saved=JSON.parse(localStorage.getItem('focus-timer-v1')||'{}');
-      const data={...saved, ...Object.fromEntries(Object.entries(fromUrl).filter(([,v])=>v!==null))};
-      if(data.label!=null) label.value=data.label;
-      if(data.mins!=null) mins.value=data.mins;
-      if(data.unit!=null) unit.value=data.unit;
-    }catch(e){}
-  }
+  addBtn.addEventListener('click', addTask);
+  tasksHeader.addEventListener('click', ()=> setCollapsed(!collapsed));
 
-  // init
-  localLoad(); computeTotal(); draw(); updateShare();
+  /* ---------- Init ---------- */
+  (function init(){
+    loadAll();
+    computeTotal(); draw(); updateShare();
+    renderTasks();
+    setCollapsed(false);
+  })();
 })();
 </script>
 </body>
