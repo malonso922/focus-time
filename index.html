@@ -11,9 +11,10 @@
     :root{
       --bg:#111111; --panel:#161616;
       --accent:#4da3ff; --accent-2:#49d47a;
-      --bar-start:#2e7ddd; --bar-end:#5aa8ff;
+      --bar-start:#2e7ddd; --bar-end:#5aa8ff; /* dark -> light */
       --focus:#a970ff; --text:#eef3ff; --muted:#a7b2cc; --danger:#ff5a5a;
       --radius:16px;
+      --pct-gap:10px; /* constant space between banner and % */
     }
     *,*::before,*::after{box-sizing:border-box}
     html,body{height:100%}
@@ -29,25 +30,18 @@
     }
 
     /* --- Top bar ----------------------------------------------------------- */
-    .topbar{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:12px; margin-bottom:8px;
-    }
+    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
     .leftTop{ min-width:0; flex:1 1 auto; }
     .hidden{ display:none !important; }
 
     /* Inputs --------------------------------------------------------------- */
-    .preRow{
-      display:flex; align-items:flex-end; gap:8px; min-width:0;
-    }
-    /* Shared input look (field + addRow) */
+    .preRow{ display:flex; align-items:flex-end; gap:8px; min-width:0; }
     .field input, .field select,
     .addRow input, .addRow select{
       border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:#eef3ff; padding:10px 12px; outline:none;
       transition:border-color .15s ease, box-shadow .15s ease;
     }
-    .field input::placeholder,
-    .addRow input::placeholder{ color:#6f7a96 }
+    .field input::placeholder, .addRow input::placeholder{ color:#6f7a96 }
     .field input:focus, .field select:focus,
     .addRow input:focus, .addRow select:focus{
       border-color:var(--focus);
@@ -57,20 +51,18 @@
     .durationField{ display:flex; gap:8px; align-items:center }
     .durationField input{ width:120px }
 
-    /* Running row (banner + %) */
-    .runRow{
-      position:relative; display:flex; align-items:center; gap:10px; min-width:0;
-    }
+    /* Running row (banner + % inline with constant gap) */
+    .runRow{ display:flex; align-items:center; gap:0; min-width:0; }
     .banner{
       font-size:16px; font-weight:800; color:#e6eeff;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      padding-right:80px; /* reserve for % */
-      flex:1 1 auto; min-width:0;
+      flex:1 1 auto; min-width:0; /* takes remaining width, ellipsizes before % */
     }
     .pctTop{
-      position:absolute; right:0; top:50%; transform:translateY(-50%);
+      margin-left:var(--pct-gap);
       font-size:16px; font-weight:800; white-space:nowrap;
       color:#cfe0ff; transition: color .25s ease;
+      flex:0 0 auto; /* keeps its own width; stays beside banner */
     }
 
     /* Actions -------------------------------------------------------------- */
@@ -113,6 +105,8 @@
       font-weight:700; color:#d9e8ff;
     }
     .est[contenteditable="true"]{ outline:none; border-color:var(--focus); box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent) }
+
+    /* Trash can (hidden until hover) */
     .trash{ display:grid; place-items:center; width:30px; height:30px; color:transparent; cursor:pointer; border:none; background:transparent; }
     .item:hover .trash{ color:var(--danger); }
     .trash svg{ width:18px; height:18px; }
@@ -127,9 +121,9 @@
     /* Tips (default collapsed) */
     .tips{ margin-top:8px; }
     .tipsHeader{ display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; color:#a7b2cc; font-size:12px; font-weight:600; }
-    .tipsHeader svg{ width:12px; height:12px; transform:rotate(-90deg); transition:transform .2s ease } /* collapsed by default */
+    .tipsHeader svg{ width:12px; height:12px; transform:rotate(-90deg); transition:transform .2s ease }
     .tipsHeader.expanded svg{ transform:rotate(0deg) }
-    .tipsBody{ color:#a7b2cc; font-size:12px; margin-top:6px; display:none } /* hidden by default */
+    .tipsBody{ color:#a7b2cc; font-size:12px; margin-top:6px; display:none }
     .tipsBody .link{ color:#b9d4ff; text-decoration:none }
     .tipsBody .link:hover{ text-decoration:underline }
   </style>
@@ -156,7 +150,7 @@
           </div>
         </div>
 
-        <!-- Running: Banner + % -->
+        <!-- Running: Banner + % inline -->
         <div class="runRow hidden" id="runRow">
           <div class="banner" id="banner" title=""></div>
           <div class="pctTop hidden" id="pctTop">0%</div>
@@ -383,6 +377,12 @@
         elapsedMs=0; computeTotal(); draw(); updateShare(); saveAll();
       });
 
+      // SWAPPED: trash before est (chip)
+      const trash=document.createElement('button');
+      trash.className='trash'; trash.title='Delete task';
+      trash.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><path class="shape" fill="currentColor" d="M9 3h6l1 2h4v2h-1l-1 12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 7H4V5h4l1-2zm1.5 6v9h2V9h-2z"/></svg>`;
+      trash.addEventListener('click', ()=>{ todos=todos.filter(x=>x!==t); saveAll(); renderTasks(); });
+
       const est=document.createElement('span');
       est.className='est'; est.textContent=t.estimate||'';
       est.title='Click to set timer • Shift+Click to edit';
@@ -407,12 +407,11 @@
         saveAll();
       });
 
-      const trash=document.createElement('button');
-      trash.className='trash'; trash.title='Delete task';
-      trash.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><path class="shape" fill="currentColor" d="M9 3h6l1 2h4v2h-1l-1 12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 7H4V5h4l1-2zm1.5 6v9h2V9h-2z"/></svg>`;
-      trash.addEventListener('click', ()=>{ todos=todos.filter(x=>x!==t); saveAll(); renderTasks(); });
-
-      row.appendChild(check); row.appendChild(title); row.appendChild(est); row.appendChild(trash);
+      // Append in new order: check | title | trash | est
+      row.appendChild(check);
+      row.appendChild(title);
+      row.appendChild(trash);
+      row.appendChild(est);
       taskList.appendChild(row);
     });
     tasksCount.textContent=`${open} open`;
@@ -446,7 +445,7 @@
   });
   addBtn.addEventListener('click', addTask);
 
-  // To-do collapse toggle
+  // Collapse toggles
   tasksHeader.addEventListener('click', ()=>{
     const list = document.querySelector('.list');
     const addRow = document.getElementById('addRow');
@@ -455,8 +454,6 @@
     addRow.style.display = collapsed ? '' : 'none';
     tasksHeader.classList.toggle('collapsed', !collapsed);
   });
-
-  // Tips collapse (default collapsed)
   tipsHeader.addEventListener('click', ()=>{
     const expanded = tipsBody.style.display === 'block';
     tipsBody.style.display = expanded ? 'none' : 'block';
@@ -468,9 +465,8 @@
     try{ if('Notification' in window && Notification.permission==='default'){ Notification.requestPermission().catch(()=>{}); } }catch(e){}
     loadAll(); computeTotal(); draw(); updateShare();
     renderTasks();
-    // Ensure pre-start layout and tips collapsed
-    showPreRow();
-    tipsBody.style.display = 'none';
+    showPreRow();           // % hidden until Start; form visible
+    tipsBody.style.display='none';
     tipsHeader.classList.remove('expanded');
   })();
 })();
