@@ -11,7 +11,7 @@
     :root{
       --bg:#111111; --panel:#161616;
       --accent:#4da3ff; --accent-2:#49d47a;
-      --bar-start:#2e7ddd; --bar-end:#5aa8ff; /* progress gradient (dark -> light) */
+      --bar-start:#2e7ddd; --bar-end:#5aa8ff;
       --focus:#a970ff; --text:#eef3ff; --muted:#a7b2cc; --danger:#ff5a5a;
       --radius:16px;
     }
@@ -33,29 +33,27 @@
       display:flex; align-items:center; justify-content:space-between;
       gap:12px; margin-bottom:8px;
     }
-
-    /* Left side has two modes: pre-start form vs running banner */
     .leftTop{ min-width:0; flex:1 1 auto; }
     .hidden{ display:none !important; }
 
-    /* Pre-start row (Task + Duration inline) */
+    /* Inputs --------------------------------------------------------------- */
     .preRow{
       display:flex; align-items:flex-end; gap:8px; min-width:0;
     }
-    .field label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px}
     .field input, .field select{
       border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:#eef3ff; padding:10px 12px; outline:none;
       transition:border-color .15s ease, box-shadow .15s ease;
     }
+    .field input::placeholder{ color:#6f7a96 }
     .field input:focus, .field select:focus{
       border-color:var(--focus);
       box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent);
     }
     .taskField{ flex:1 1 auto; min-width:200px }
     .durationField{ display:flex; gap:8px; align-items:center }
-    .durationField input{ width:110px }
+    .durationField input{ width:120px }
 
-    /* Running row (banner + % next to it) */
+    /* Running row (banner + %) */
     .runRow{
       position:relative; display:flex; align-items:center; gap:10px; min-width:0;
     }
@@ -71,7 +69,7 @@
       color:#cfe0ff; transition: color .25s ease;
     }
 
-    /* Right side actions */
+    /* Actions -------------------------------------------------------------- */
     .actions{ display:flex; align-items:center; gap:8px }
     .iconbtn{
       width:36px; height:36px; display:grid; place-items:center; border-radius:999px;
@@ -82,7 +80,7 @@
     .iconbtn .ring{ fill:none; stroke:currentColor; stroke-width:2 }
     .iconbtn .shape{ fill:currentColor }
 
-    /* Progress + clock ------------------------------------------------------ */
+    /* Progress ------------------------------------------------------------- */
     .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden}
     .fill{ height:100%; width:0%; background: linear-gradient(90deg,var(--bar-start),var(--bar-end)); transition:width .3s ease, background .3s ease, opacity .25s ease; }
     .barRow{ display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center; }
@@ -122,12 +120,12 @@
     #addBtn{ background:transparent; border:none; color:#fff; cursor:pointer; font-size:22px; line-height:1; width:36px; height:36px; display:grid; place-items:center; }
     #addBtn:hover{ color:var(--accent); }
 
-    /* Tips */
+    /* Tips (default collapsed) */
     .tips{ margin-top:8px; }
     .tipsHeader{ display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; color:#a7b2cc; font-size:12px; font-weight:600; }
-    .tipsHeader svg{ width:12px; height:12px; transform:rotate(0deg); transition:transform .2s ease }
-    .tipsHeader.collapsed svg{ transform:rotate(-90deg) }
-    .tipsBody{ color:#a7b2cc; font-size:12px; margin-top:6px; display:block }
+    .tipsHeader svg{ width:12px; height:12px; transform:rotate(-90deg); transition:transform .2s ease } /* collapsed by default */
+    .tipsHeader.expanded svg{ transform:rotate(0deg) }
+    .tipsBody{ color:#a7b2cc; font-size:12px; margin-top:6px; display:none } /* hidden by default */
     .tipsBody .link{ color:#b9d4ff; text-decoration:none }
     .tipsBody .link:hover{ text-decoration:underline }
   </style>
@@ -135,20 +133,18 @@
 <body>
   <div class="card" id="app">
 
-    <!-- Top bar: left switches between preRow and runRow; right is controls -->
+    <!-- Top bar -->
     <div class="topbar">
       <div class="leftTop">
-        <!-- Pre-start form row -->
+        <!-- Pre-start: Task + Duration (placeholders instead of labels) -->
         <div class="preRow" id="preRow">
-          <div class="field taskField" id="taskField">
-            <label>Task name</label>
-            <input id="label" type="text" placeholder="e.g., Court Documentation" />
+          <div class="field taskField">
+            <input id="label" type="text" placeholder="Task name" />
           </div>
-          <div class="field" id="durationField">
-            <label>Duration</label>
+          <div class="field">
             <div class="durationField">
-              <input id="mins" type="number" min="1" step="1" value="25"/>
-              <select id="unit">
+              <input id="mins" type="number" min="1" step="1" value="25" placeholder="Duration" />
+              <select id="unit" aria-label="Time unit">
                 <option value="min" selected>minutes</option>
                 <option value="hr">hours</option>
               </select>
@@ -156,7 +152,7 @@
           </div>
         </div>
 
-        <!-- Running row (shows after Start) -->
+        <!-- Running: Banner + % -->
         <div class="runRow hidden" id="runRow">
           <div class="banner" id="banner" title=""></div>
           <div class="pctTop hidden" id="pctTop">0%</div>
@@ -165,21 +161,15 @@
 
       <div class="actions">
         <button class="iconbtn" id="toggleBtn" title="Start" aria-label="Start">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle class="ring" cx="12" cy="12" r="10" />
-            <path class="shape" d="M10 8v8l6-4z"/>
-          </svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle class="ring" cx="12" cy="12" r="10" /><path class="shape" d="M10 8v8l6-4z"/></svg>
         </button>
         <button class="iconbtn" id="resetBtn" title="Reset" aria-label="Reset" disabled>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle class="ring" cx="12" cy="12" r="10" />
-            <rect class="shape" x="8.5" y="8.5" width="7" height="7" rx="1.2"/>
-          </svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle class="ring" cx="12" cy="12" r="10" /><rect class="shape" x="8.5" y="8.5" width="7" height="7" rx="1.2"/></svg>
         </button>
       </div>
     </div>
 
-    <!-- progress + clock on right -->
+    <!-- Progress + Clock -->
     <div>
       <div class="barRow">
         <div class="bar" id="bar"><div class="fill" id="fill"></div></div>
@@ -198,7 +188,7 @@
       <div class="list" id="taskList"></div>
 
       <div class="addRow" id="addRow">
-        <input name="taskTitle" id="taskTitle" type="text" placeholder="Add a task…"/>
+        <input name="taskTitle" id="taskTitle" type="text" placeholder="Add a task…" />
         <input name="taskEst" id="taskEst" type="text" placeholder="e.g., 25m or 2h" />
         <button id="addBtn" title="Add task" aria-label="Add task">+</button>
       </div>
@@ -297,7 +287,7 @@
   function showPreRow(){
     preRow.classList.remove('hidden');
     runRow.classList.add('hidden');
-    pctTop.classList.add('hidden');   // % hidden pre-start
+    pctTop.classList.add('hidden');   // hide % pre-start
   }
   function showRunRow(){
     const taskText = label.value || 'Untitled Task';
@@ -305,7 +295,7 @@
     banner.title = taskText;
     preRow.classList.add('hidden');
     runRow.classList.remove('hidden');
-    pctTop.classList.remove('hidden'); // % visible only after start
+    pctTop.classList.remove('hidden'); // % visible after start
   }
 
   function start(){
@@ -320,7 +310,6 @@
   }
   function reset(){
     cancelAnimationFrame(timer); elapsedMs=0; setState(false); draw();
-    // Back to pre-start layout
     showPreRow();
   }
   function tick(){
@@ -431,11 +420,10 @@
     if(!title) return;
     let pretty='';
     if(estRaw){ const parsed=parseEstimate(estRaw); if(parsed) pretty=parsed.pretty; }
-    // chronological order: push to end (first entered stays on top)
     todos.push({id:uid(), title, estimate:pretty, done:false});
     taskTitle.value=''; taskEst.value='';
     saveAll(); renderTasks();
-    taskTitle.focus(); // keep typing next task
+    taskTitle.focus();
   }
 
   /* Events */
@@ -454,21 +442,21 @@
   });
   addBtn.addEventListener('click', addTask);
 
+  // To-do collapse toggle
   tasksHeader.addEventListener('click', ()=>{
-    const c = document.body.dataset.tasksCollapsed === '1';
-    document.body.dataset.tasksCollapsed = c ? '0' : '1';
-    tasksHeader.classList.toggle('collapsed', !c);
-    document.querySelector('.list').style.display = c ? '' : 'none';
-    document.querySelector('.addRow').style.display = c ? '' : 'none';
-    const tipsH = $('tipsHeader'), tipsB = $('tipsBody');
-    tipsH.style.display = c ? '' : 'none';
-    tipsB.style.display = c ? (document.body.dataset.tipsCollapsed==='1' ? 'none':'block') : 'none';
+    const list = document.querySelector('.list');
+    const addRow = document.getElementById('addRow');
+    const collapsed = list.style.display === 'none';
+    list.style.display = collapsed ? '' : 'none';
+    addRow.style.display = collapsed ? '' : 'none';
+    tasksHeader.classList.toggle('collapsed', !collapsed);
   });
+
+  // Tips collapse (default collapsed)
   tipsHeader.addEventListener('click', ()=>{
-    const t = document.body.dataset.tipsCollapsed === '1';
-    document.body.dataset.tipsCollapsed = t ? '0' : '1';
-    tipsHeader.classList.toggle('collapsed', !t);
-    tipsBody.style.display = t ? 'block' : 'none';
+    const expanded = tipsBody.style.display === 'block';
+    tipsBody.style.display = expanded ? 'none' : 'block';
+    tipsHeader.classList.toggle('expanded', !expanded);
   });
 
   /* Init */
@@ -476,9 +464,10 @@
     try{ if('Notification' in window && Notification.permission==='default'){ Notification.requestPermission().catch(()=>{}); } }catch(e){}
     loadAll(); computeTotal(); draw(); updateShare();
     renderTasks();
-    // Ensure pre-start layout (duration next to task; % hidden)
+    // Ensure pre-start layout and tips collapsed
     showPreRow();
-    document.body.dataset.tipsCollapsed='1';
+    tipsBody.style.display = 'none';
+    tipsHeader.classList.remove('expanded');
   })();
 })();
 </script>
