@@ -14,46 +14,42 @@
       --bar-start:#2e7ddd; --bar-end:#5aa8ff; /* dark -> light */
       --focus:#a970ff; --text:#eef3ff; --muted:#a7b2cc; --danger:#ff5a5a;
       --radius:16px;
-      --pct-gap:10px;       /* gap between title and % */
-      --card-max:560px;     /* tighten to avoid horizontal scroll in ClickUp */
-      --page-pad:12px;      /* small top padding inside ClickUp card */
+      --pct-gap:10px;
+      --card-max:560px;
+      --page-pad:12px;
     }
     *,*::before,*::after{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0; background:var(--bg); color:var(--text);
       font:14px/1.4 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-      /* TOP-ALIGNED (no vertical centering) */
-      display:block; padding:var(--page-pad);
+      display:block; padding:var(--page-pad);   /* top-aligned for ClickUp card */
     }
     .card{
       width:min(var(--card-max),100%); background:var(--panel);
       border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:0 10px 30px rgba(0,0,0,.4);
-      padding:12px 16px 18px; margin:0 auto; /* stays at top, centered horizontally */
+      padding:12px 16px 18px; margin:0 auto;
     }
 
     .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
     .leftTop{ min-width:0; flex:1 1 auto; }
     .hidden{ display:none !important; }
 
-    /* Pre-start inputs — now wrap on narrow widths */
+    /* Pre-start inputs (wrap on narrow) */
     .preRow{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; min-width:0; }
-    .field input, .field select,
-    .addRow input, .addRow select{
+    .field input, .field select, .addRow input, .addRow select{
       border-radius:10px; border:1px solid rgba(255,255,255,.12); background:#0f0f0f; color:#eef3ff; padding:10px 12px; outline:none;
       transition:border-color .15s ease, box-shadow .15s ease;
     }
     .field input::placeholder, .addRow input::placeholder{ color:#6f7a96 }
-    .field input:focus, .field select:focus,
-    .addRow input:focus, .addRow select:focus{
+    .field input:focus, .field select:focus, .addRow input:focus, .addRow select:focus{
       border-color:var(--focus);
       box-shadow:0 0 0 2px color-mix(in srgb, var(--focus) 35%, transparent);
     }
-    .taskField{ flex:1 1 240px; min-width:200px }
+    .taskField{ flex:1 1 200px; min-width:180px }           /* shortened */
     .durationField{ display:flex; gap:8px; align-items:center; flex:0 1 auto }
-    /* Narrower minutes box to prevent overflow in ClickUp’s card */
-    .durationField input{ width:88px }
-    .durationField select{ max-width:120px }
+    .durationField input{ width:72px }                      /* narrower mins box */
+    .durationField select{ max-width:110px }
 
     /* Running row (banner + % inline) */
     .runRow{ display:flex; align-items:center; gap:0; min-width:0; flex:1 1 auto; }
@@ -114,7 +110,7 @@
     .addRow input[name="taskTitle"]{ width:100% }
     .addRow input[name="taskEst"]{ width:110px; text-align:center }
     #addBtn{ background:transparent; border:none; color:#fff; cursor:pointer; font-size:22px; line-height:1; width:36px; height:36px; display:grid; place-items:center; }
-    #addBtn:hover{ color:var(--accent); }
+    #addBtn:hover{ color:#4da3ff; }
 
     .tips{ margin-top:8px; }
     .tipsHeader{ display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; color:#a7b2cc; font-size:12px; font-weight:600; }
@@ -130,7 +126,7 @@
 
     <div class="topbar">
       <div class="leftTop">
-        <!-- Pre-start: Task + Duration (wrappable) -->
+        <!-- Pre-start: Task + Duration -->
         <div class="preRow" id="preRow">
           <div class="field taskField">
             <input id="label" type="text" placeholder="Task name" />
@@ -146,7 +142,7 @@
           </div>
         </div>
 
-        <!-- Running: Banner + % inline -->
+        <!-- Running: Banner + % inline (left) -->
         <div class="runRow hidden" id="runRow">
           <div class="banner" id="banner" title=""></div>
           <div class="pctTop hidden" id="pctTop">0%</div>
@@ -332,7 +328,10 @@
     const s = String(text).trim().toLowerCase().replace(/\s+/g,''); if(!s) return null;
     let h=0, m=0; const m1 = s.match(/^(?:(\d+(?:\.\d+)?)h)?(?:(\d+)m)?$/);
     if(m1){ if(m1[1]) h = parseFloat(m1[1]); if(m1[2]) m = parseInt(m1[2],10)||0; const totalMin = Math.round(h*60 + m); return {mins: totalMin, pretty: prettyEstimate(totalMin)}; }
-    if(/^\d+$/.test(s)){ const totalMin = parseInt(s,10); return {mins: total Min, pretty: prettyEstimate(totalMin)}; }
+    if(/^\d+$/.test(s)){
+      const totalMin = parseInt(s,10);
+      return { mins: totalMin, pretty: prettyEstimate(totalMin) };  /* FIXED */
+    }
     return null;
   }
   function prettyEstimate(totalMin){
@@ -400,6 +399,7 @@
         saveAll();
       });
 
+      /* Order: check | title | trash | est */
       row.appendChild(check);
       row.appendChild(title);
       row.appendChild(trash);
