@@ -12,8 +12,13 @@
     :root{
       --bg:#111111;         /* ClickUp dark */
       --panel:#161616;      /* card bg */
-      --accent:#4da3ff;
+      --accent:#4da3ff;     /* legacy single color (kept as a token) */
       --accent-2:#49d47a;
+
+      /* gradient stops for the progress fill (updated live by JS) */
+      --bar-start:#5aa8ff;
+      --bar-end:#2e7ddd;
+
       --focus:#a970ff;      /* focus ring */
       --text:#eef3ff;
       --muted:#a7b2cc;
@@ -49,7 +54,11 @@
 
     /* progress + dynamic clock on right (bar takes leftover) */
     .bar{height:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:999px; overflow:hidden}
-    .fill{height:100%; width:0%; background:var(--accent); transition:width .3s ease, background .3s ease}
+    .fill{
+      height:100%; width:0%;
+      background: linear-gradient(90deg,var(--bar-start),var(--bar-end));
+      transition:width .3s ease, background .3s ease, opacity .25s ease;
+    }
     .barRow{
       display:grid;
       grid-template-columns: 1fr auto; /* long bar + clock as wide as needed */
@@ -195,11 +204,30 @@
     shareLink.href = `${location.origin}${location.pathname}?${params.toString()}`;
   }
 
+  function setGradient(p){
+    // p = 0..100
+    if(p >= 100){
+      // done: subtle neutral
+      fill.style.setProperty('--bar-start', '#7a8291');
+      fill.style.setProperty('--bar-end', '#646b7a');
+      return;
+    }
+    if(p < 67){
+      // early/mid: blue gradient
+      fill.style.setProperty('--bar-start', '#5aa8ff'); // lighter
+      fill.style.setProperty('--bar-end',   '#2e7ddd'); // darker
+    }else{
+      // late: green gradient
+      fill.style.setProperty('--bar-start', '#6be28f');
+      fill.style.setProperty('--bar-end',   '#3dbd6d');
+    }
+  }
+
   function draw(){
     const done=clamp(elapsedMs,0,totalMs);
     const p = Math.round( (done/totalMs)*100 );
+    setGradient(p);
     fill.style.width = p + '%';
-    fill.style.background = p>=100? '#646b7a' : (p<67? 'var(--accent)' : 'var(--accent-2)');
     pct.textContent = p + '%';
     clock.textContent = fmt(totalMs - done);
     elapsed.textContent = fmt(done);
@@ -263,11 +291,11 @@
 
   // events
   [label, mins, unit].forEach(el=>{
-    el.addEventListener('input',()=>{ updateShare(); localSave(); draw(); });
-    el.addEventListener('change',()=>{ updateShare(); localSave(); draw(); });
+    el.addEventListener('input',()=>{ updateShare(); localSave(); computeTotal(); draw(); });
+    el.addEventListener('change',()=>{ updateShare(); localSave(); computeTotal(); draw(); });
   });
 
-  // Removed Spacebar hotkey; only keep 'R' for reset
+  // No spacebar hotkey; keep 'R' for reset only
   document.addEventListener('keydown', (e)=>{
     if(e.key==='r' || e.key==='R'){ reset(); }
   });
@@ -283,7 +311,7 @@
     if(!chip) return;
     mins.value = chip.dataset.mins;
     unit.value = 'min';
-    elapsedMs=0; draw(); updateShare(); localSave();
+    elapsedMs=0; computeTotal(); draw(); updateShare(); localSave();
   });
 
   try{ if('Notification' in window && Notification.permission==='default'){ Notification.requestPermission().catch(()=>{}); } }catch(e){}
